@@ -1,0 +1,180 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Light Theme Variables */
+  --background: #f4f6fa;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-alt: #f8fafc;
+  --border: #e8edf5;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #e2e8f0;
+  --text-bright: #0f172a;
+  --text-primary: #334155;
+  --text-secondary: #475569;
+  
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #e8edf5;
+  --sidebar-hover: #f1f5f9;
+  --sidebar-active: #e2e8f0;
+  --button-secondary-bg: #f1f5f9;
+  --button-secondary-hover: #e2e8f0;
+}
+
+.dark {
+  /* Dark Theme Variables matching the charcoal screenshot */
+  --background: #080808;
+  --foreground: #fafafa;
+  --card: #161618;
+  --card-alt: #0d0d0e;
+  --border: #222225;
+  --muted: #27272a;
+  --muted-foreground: #8e8e93;
+  --accent: #2e2e33;
+  --text-bright: #ffffff;
+  --text-primary: #8e8e93;
+  --text-secondary: #5e5e64;
+
+  --sidebar-bg: #0d0d0e;
+  --sidebar-border: #222225;
+  --sidebar-hover: #1e1e21;
+  --sidebar-active: #262629;
+  --button-secondary-bg: #1e1e21;
+  --button-secondary-hover: #2a2a2e;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Custom scrollbar styling for a premium sleek look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* Map Tailwind arbitrary layout colors to theme CSS variables */
+.bg-\[\#09090b\] {
+  background-color: var(--background) !important;
+}
+.bg-\[\#121214\] {
+  background-color: var(--card) !important;
+}
+.bg-\[\#0f1115\] {
+  background-color: var(--card-alt) !important;
+}
+.bg-\[\#0f1115\]\/45 {
+  background-color: rgba(241, 245, 249, 0.45) !important;
+}
+.dark .bg-\[\#0f1115\]\/45 {
+  background-color: rgba(15, 17, 21, 0.45) !important;
+}
+.bg-\[\#0f1115\]\/30 {
+  background-color: rgba(241, 245, 249, 0.3) !important;
+}
+.dark .bg-\[\#0f1115\]\/30 {
+  background-color: rgba(15, 17, 21, 0.3) !important;
+}
+.bg-\[\#1b1f29\] {
+  background-color: var(--sidebar-active) !important;
+}
+.bg-\[\#13161c\] {
+  background-color: var(--sidebar-hover) !important;
+}
+.bg-\[\#1c1f28\]\/60 {
+  background-color: var(--sidebar-hover) !important;
+}
+.bg-\[\#161a23\] {
+  background-color: var(--card-alt) !important;
+}
+.bg-\[\#161920\] {
+  background-color: var(--button-secondary-bg) !important;
+}
+.bg-\[\#161920\]\/60 {
+  background-color: var(--button-secondary-bg) !important;
+  opacity: 0.6;
+}
+.bg-\[\#161920\]\/40 {
+  background-color: var(--button-secondary-bg) !important;
+  opacity: 0.4;
+}
+
+/* Hover background overrides to map arbitrary colors to theme variables */
+.hover\:bg-\[\#1f2430\]:hover {
+  background-color: var(--button-secondary-hover) !important;
+}
+.hover\:bg-\[\#161920\]:hover {
+  background-color: var(--button-secondary-bg) !important;
+}
+.hover\:bg-\[\#13161c\]:hover {
+  background-color: var(--sidebar-hover) !important;
+}
+.hover\:bg-zinc-900:hover {
+  background-color: var(--sidebar-hover) !important;
+}
+
+/* Border overrides */
+.border-\[\#1e222b\] {
+  border-color: var(--border) !important;
+}
+.border-\[\#1e222b\]\/50 {
+  border-color: var(--border) !important;
+  opacity: 0.7;
+}
+
+/* Sidebar structure overrides */
+aside.bg-\[\#0f1115\] {
+  background-color: var(--sidebar-bg) !important;
+  border-right-color: var(--sidebar-border) !important;
+}
+
+/* Light Mode Text overrides to ensure contrast */
+html:not(.dark) .text-white:not(.bg-\[\#5865f2\]):not(.bg-\[\#4752c4\]):not(.bg-brand):not(.bg-indigo-600):not(.bg-indigo-500):not(.text-indigo-400):not(.text-emerald-400):not(.text-amber-400) {
+  color: var(--text-bright) !important;
+}
+html:not(.dark) .text-zinc-100:not(.text-indigo-400):not(.text-emerald-400):not(.text-amber-400),
+html:not(.dark) .text-zinc-200:not(.text-indigo-400):not(.text-emerald-400):not(.text-amber-400),
+html:not(.dark) .text-zinc-300:not(.text-indigo-400):not(.text-emerald-400):not(.text-amber-400) {
+  color: var(--text-bright) !important;
+}
+html:not(.dark) .text-zinc-400 {
+  color: var(--text-primary) !important;
+}
+html:not(.dark) .text-zinc-500 {
+  color: var(--text-secondary) !important;
+}
+html:not(.dark) .text-zinc-350 {
+  color: var(--text-primary) !important;
+}
+html:not(.dark) .divide-\[\#1e222b\]\/50 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border) !important;
+}
+
+/* Light Mode Hover Text overrides to ensure contrast */
+html:not(.dark) .hover\:text-white:hover,
+html:not(.dark) .hover\:text-zinc-100:hover,
+html:not(.dark) .hover\:text-zinc-200:hover,
+html:not(.dark) .hover\:text-zinc-300:hover,
+html:not(.dark) .group:hover .group-hover\:text-white,
+html:not(.dark) .group:hover .group-hover\:text-zinc-100,
+html:not(.dark) .group:hover .group-hover\:text-zinc-200,
+html:not(.dark) .group:hover .group-hover\:text-zinc-300 {
+  color: var(--text-bright) !important;
+}
