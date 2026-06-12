@@ -1,9 +1,10 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
-import { missingSkills } from '../../../mock/dashboardData';
+import { useData } from '../../../context/DataContext';
 
 export default function MissingSkills() {
+  const { missingSkills } = useData();
   return (
     <Card className="bg-[#121214] border border-[#1e222b] h-full flex flex-col justify-between">
       <CardHeader className="pb-2">

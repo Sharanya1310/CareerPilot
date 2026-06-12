@@ -1,0 +1,471 @@
+{
+  "stats": {
+    "totalApplications": {
+      "count": 5,
+      "growth": "+12%",
+      "timeline": "this month"
+    },
+    "activeStatus": {
+      "applied": 2,
+      "oa": 1,
+      "interview": 1,
+      "offer": 1
+    },
+    "offersReceived": {
+      "count": "01",
+      "target": 5,
+      "percentage": 20,
+      "status": "1 offer(s) received"
+    }
+  },
+  "atsScore": {
+    "score": 78,
+    "trend": "+8 points since last update"
+  },
+  "missingSkills": [
+    "Docker",
+    "AWS (Lambda/S3)",
+    "Redix"
+  ],
+  "recommendedJobs": [
+    {
+      "id": 101,
+      "title": "Full Stack Engineer",
+      "company": "Stripe",
+      "location": "Remote",
+      "salary": "$180k - $240k",
+      "match": 91,
+      "tags": [
+        "React",
+        "Node.js",
+        "Go"
+      ]
+    },
+    {
+      "id": 102,
+      "title": "Backend Developer (Python)",
+      "company": "Airbnb",
+      "location": "San Francisco",
+      "salary": "Hybrid",
+      "match": 85,
+      "tags": [
+        "Python",
+        "Django",
+        "PostgreSQL"
+      ]
+    }
+  ],
+  "recentApplications": [
+    {
+      "id": 5,
+      "company": "Netflix",
+      "role": "Senior Frontend Engineer",
+      "status": "Offer",
+      "color": "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
+      "date": "Jun 12"
+    },
+    {
+      "id": 4,
+      "company": "Stripe",
+      "role": "Full Stack Developer",
+      "status": "Applied",
+      "color": "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20",
+      "date": "Tomorrow"
+    }
+  ],
+  "trackedCompanies": [
+    {
+      "name": "Google",
+      "domain": "google.com",
+      "openings": 2
+    },
+    {
+      "name": "Microsoft",
+      "domain": "microsoft.com",
+      "openings": 1
+    },
+    {
+      "name": "Amazon",
+      "domain": "amazon.com",
+      "openings": 0
+    }
+  ],
+  "upcomingInterviews": [
+    {
+      "id": 1,
+      "company": "Google",
+      "role": "L3 Backend",
+      "date": "Oct 27",
+      "time": "2:00 PM"
+    },
+    {
+      "id": 2,
+      "company": "Meta",
+      "role": "System Design",
+      "date": "Oct 29",
+      "time": "10:00 AM"
+    }
+  ],
+  "applications": [
+    {
+      "id": 1,
+      "company": "Linear",
+      "role": "Senior Product Designer",
+      "stage": "Assessment",
+      "category": "Product Design",
+      "date": "Oct 12",
+      "deadline": "2d left",
+      "timeline": "Applied on Oct 12"
+    },
+    {
+      "id": 2,
+      "company": "Vercel",
+      "role": "Frontend Engineer",
+      "stage": "Applied",
+      "category": "Engineering",
+      "date": "Oct 14",
+      "deadline": "5d left",
+      "timeline": "Applied on Oct 14"
+    },
+    {
+      "id": 3,
+      "company": "Datadog",
+      "role": "Backend Systems Eng",
+      "stage": "Interview",
+      "category": "Hackerrank",
+      "date": "Oct 10",
+      "deadline": "Expires in 18h",
+      "timeline": "Assessment scheduled"
+    },
+    {
+      "id": 4,
+      "company": "Stripe",
+      "role": "Full Stack Developer",
+      "stage": "Applied",
+      "category": "Technical Round",
+      "date": "Tomorrow",
+      "deadline": "Tomorrow",
+      "interviewer": "Sarah K.",
+      "link": "#join",
+      "timeline": "Interview set for Tomorrow"
+    },
+    {
+      "id": 5,
+      "company": "Netflix",
+      "role": "Senior Frontend Engineer",
+      "stage": "Offer",
+      "category": "Engineering",
+      "date": "Jun 12",
+      "deadline": "3d left",
+      "interviewer": "",
+      "link": "",
+      "timeline": "Applied on 6/12/2026"
+    }
+  ],
+  "profile": {
+    "name": "Sharanya Singh",
+    "email": "sharanya@email.com",
+    "frontendSkills": [
+      "React",
+      "TypeScript",
+      "Tailwind"
+    ],
+    "backendSkills": [
+      "Node.js",
+      "Express.js",
+      "MongoDB",
+      "Java"
+    ],
+    "toolsSkills": [
+      "Git",
+      "Docker"
+    ],
+    "desiredRoles": [
+      "Full Stack Developer",
+      "Frontend Developer"
+    ],
+    "preferredLocations": [
+      "Bangalore",
+      "Pune",
+      "Hyderabad",
+      "Remote"
+    ],
+    "workTypes": {
+      "remote": true,
+      "hybrid": true,
+      "onsite": false
+    },
+    "resumeFilename": "Senior_Dev_V2.pdf",
+    "resumeScore": 78,
+    "resumeUpdated": "Active • Oct 24"
+  },
+  "resumes": [
+    {
+      "id": 3,
+      "name": "Test_Resume_2026.pdf",
+      "filename": "resume-1781279772707-710865137.pdf",
+      "uploadedAt": "2026-06-12T15:56:12.717Z",
+      "score": 65,
+      "isActive": false,
+      "size": 151
+    },
+    {
+      "id": 1,
+      "name": "Senior_Dev_V2.pdf",
+      "filename": "Senior_Dev_V2.pdf",
+      "uploadedAt": "2026-10-24T12:00:00.000Z",
+      "score": 78,
+      "isActive": true,
+      "size": 124500
+    },
+    {
+      "id": 2,
+      "name": "Senior_Dev_V1.pdf",
+      "filename": "Senior_Dev_V1.pdf",
+      "uploadedAt": "2026-10-12T09:30:00.000Z",
+      "score": 59,
+      "isActive": false,
+      "size": 98400
+    }
+  ],
+  "resumeOptimizationData": {
+    "compatibilityScore": 66,
+    "percentile": 67,
+    "sectionScores": [
+      {
+        "label": "Skills",
+        "score": 72,
+        "color": "bg-indigo-500"
+      },
+      {
+        "label": "Projects",
+        "score": 70,
+        "color": "bg-indigo-500"
+      },
+      {
+        "label": "Experience",
+        "score": 58,
+        "color": "bg-amber-500"
+      },
+      {
+        "label": "Formatting",
+        "score": 85,
+        "color": "bg-indigo-500"
+      }
+    ],
+    "myResumes": [
+      {
+        "name": "Test_Resume_2026.pdf",
+        "status": "12/6/2026",
+        "score": 65
+      },
+      {
+        "name": "Senior_Dev_V2.pdf",
+        "status": "Active • 24/10/2026",
+        "score": 78
+      },
+      {
+        "name": "Senior_Dev_V1.pdf",
+        "status": "12/10/2026",
+        "score": 59
+      }
+    ],
+    "jobMatch": {
+      "matchPercentage": 67,
+      "missingSkills": [
+        "AWS",
+        "CI/CD"
+      ],
+      "summary": "Analyzed compatibility against target parameters. ATS compatibility is 66%, with a direct keyword match density of 67%. Matched 4 of 6 technical descriptors."
+    },
+    "optimizerResults": {
+      "rewrittenExperience": [
+        "Spearheaded modular frontend features using **TypeScript** and **React**, increasing page responsiveness and developer delivery velocity.",
+        "Refactored release deployment telemetry utilizing CI/CD pipelines, improving code delivery reliability."
+      ],
+      "skillsEnhancement": [
+        "TypeScript",
+        "React",
+        "Node.js",
+        "Docker"
+      ]
+    },
+    "suggestions": [
+      "Integrate key target technologies like **AWS, CI/CD** into your skills header to satisfy core keyword screening filters.",
+      "Flesh out your project bullet points to explicitly describe how you leveraged **TypeScript or React** to solve product engineering requirements.",
+      "Ensure your experience section headers use standard, scan-friendly naming patterns (e.g. 'Work Experience' instead of 'My Tech Journey') to avoid parser confusion."
+    ]
+  },
+  "analysisHistory": [
+    {
+      "id": 3,
+      "resumeId": 2,
+      "resumeName": "Senior_Dev_V1.pdf",
+      "timestamp": "2026-06-12T16:21:02.206Z",
+      "atsScore": 59,
+      "matchPercentage": 45,
+      "matchedKeywords": [
+        "Docker"
+      ],
+      "missingKeywords": [
+        "Kubernetes",
+        "Aws",
+        "Cloud",
+        "Terraform",
+        "System design"
+      ],
+      "jobTitle": "Cloud Architect",
+      "company": "Vercel",
+      "jobDescription": "We are looking for a Cloud Architect with hands-on experience in Docker, Kubernetes, AWS, Terraform, and system design.",
+      "summary": "Analyzed compatibility against target parameters. ATS compatibility is 59%, with a direct keyword match density of 45%. Matched 1 of 6 technical descriptors.",
+      "rewrittenExperience": [
+        "Spearheaded modular frontend features using **Docker** and **TypeScript**, increasing page responsiveness and developer delivery velocity.",
+        "Refactored release deployment telemetry utilizing CI/CD pipelines, improving code delivery reliability."
+      ],
+      "suggestions": [
+        "Integrate key target technologies like **Kubernetes, Aws, Cloud** into your skills header to satisfy core keyword screening filters.",
+        "Flesh out your project bullet points to explicitly describe how you leveraged **Docker** to solve product engineering requirements.",
+        "Ensure your experience section headers use standard, scan-friendly naming patterns (e.g. 'Work Experience' instead of 'My Tech Journey') to avoid parser confusion."
+      ],
+      "sectionScores": [
+        {
+          "label": "Skills",
+          "score": 65,
+          "color": "bg-indigo-500"
+        },
+        {
+          "label": "Projects",
+          "score": 63,
+          "color": "bg-indigo-500"
+        },
+        {
+          "label": "Experience",
+          "score": 51,
+          "color": "bg-amber-500"
+        },
+        {
+          "label": "Formatting",
+          "score": 85,
+          "color": "bg-indigo-500"
+        }
+      ],
+      "skillsEnhancement": [
+        "Docker",
+        "Kubernetes",
+        "Aws",
+        "Cloud"
+      ]
+    },
+    {
+      "id": 2,
+      "resumeId": 2,
+      "resumeName": "Senior_Dev_V1.pdf",
+      "timestamp": "2026-06-12T16:14:59.272Z",
+      "atsScore": 80,
+      "matchPercentage": 98,
+      "matchedKeywords": [
+        "React",
+        "Typescript",
+        "Tailwind"
+      ],
+      "missingKeywords": [],
+      "jobTitle": "Frontend Engineer",
+      "company": "Netflix",
+      "summary": "Analyzed compatibility against target parameters. ATS compatibility is 80%, with a direct keyword match density of 98%. Matched 3 of 3 technical descriptors.",
+      "rewrittenExperience": [
+        "Spearheaded modular frontend features using **React** and **Typescript**, increasing page responsiveness and developer delivery velocity.",
+        "Refactored release deployment telemetry utilizing CI/CD pipelines, improving code delivery reliability."
+      ],
+      "suggestions": [
+        "Your resume skills completely cover all technical keywords parsed in this job description. Focus on optimizing formatting next.",
+        "Flesh out your project bullet points to explicitly describe how you leveraged **React or Typescript** to solve product engineering requirements.",
+        "Ensure your experience section headers use standard, scan-friendly naming patterns (e.g. 'Work Experience' instead of 'My Tech Journey') to avoid parser confusion."
+      ],
+      "sectionScores": [
+        {
+          "label": "Skills",
+          "score": 86,
+          "color": "bg-indigo-500"
+        },
+        {
+          "label": "Projects",
+          "score": 84,
+          "color": "bg-indigo-500"
+        },
+        {
+          "label": "Experience",
+          "score": 72,
+          "color": "bg-amber-500"
+        },
+        {
+          "label": "Formatting",
+          "score": 85,
+          "color": "bg-indigo-500"
+        }
+      ],
+      "skillsEnhancement": [
+        "React",
+        "Typescript",
+        "Tailwind"
+      ]
+    },
+    {
+      "id": 1,
+      "resumeId": 2,
+      "resumeName": "Senior_Dev_V1.pdf",
+      "timestamp": "2026-06-12T16:13:30.458Z",
+      "atsScore": 53,
+      "matchPercentage": 45,
+      "matchedKeywords": [
+        "Docker"
+      ],
+      "missingKeywords": [
+        "Kubernetes",
+        "Aws",
+        "Cloud",
+        "Terraform",
+        "System design"
+      ],
+      "jobTitle": "Cloud Architect",
+      "company": "Vercel",
+      "summary": "Analyzed compatibility against target parameters. ATS compatibility is 53%, with a direct keyword match density of 45%. Matched 1 of 6 technical descriptors.",
+      "rewrittenExperience": [
+        "Spearheaded modular frontend features using **Docker** and **TypeScript**, increasing page responsiveness and developer delivery velocity.",
+        "Refactored release deployment telemetry utilizing CI/CD pipelines, improving code delivery reliability."
+      ],
+      "suggestions": [
+        "Integrate key target technologies like **Kubernetes, Aws, Cloud** into your skills header to satisfy core keyword screening filters.",
+        "Flesh out your project bullet points to explicitly describe how you leveraged **Docker** to solve product engineering requirements.",
+        "Ensure your experience section headers use standard, scan-friendly naming patterns (e.g. 'Work Experience' instead of 'My Tech Journey') to avoid parser confusion."
+      ],
+      "sectionScores": [
+        {
+          "label": "Skills",
+          "score": 59,
+          "color": "bg-indigo-500"
+        },
+        {
+          "label": "Projects",
+          "score": 57,
+          "color": "bg-indigo-500"
+        },
+        {
+          "label": "Experience",
+          "score": 45,
+          "color": "bg-amber-500"
+        },
+        {
+          "label": "Formatting",
+          "score": 85,
+          "color": "bg-indigo-500"
+        }
+      ],
+      "skillsEnhancement": [
+        "Docker",
+        "Kubernetes",
+        "Aws",
+        "Cloud"
+      ]
+    }
+  ]
+}

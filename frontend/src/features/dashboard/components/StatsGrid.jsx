@@ -1,10 +1,11 @@
 import React from 'react';
 import { Card, CardContent } from '../../../components/ui/Card';
-import { statsData } from '../../../mock/dashboardData';
+import { useData } from '../../../context/DataContext';
 import { Send, TrendingUp, Layers, Award } from 'lucide-react';
 
 export default function StatsGrid() {
-  const { totalApplications, activeStatus, offersReceived } = statsData;
+  const { stats } = useData();
+  const { totalApplications, activeStatus, offersReceived } = stats;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5 select-none">

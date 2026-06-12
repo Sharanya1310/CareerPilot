@@ -2,9 +2,21 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Progress } from '../../../components/ui/Progress';
-import { applicationStatusData, monthlyChartData } from '../../../mock/dashboardData';
+import { useData } from '../../../context/DataContext';
+import { monthlyChartData } from '../../../mock/dashboardData';
 
 export default function AnalyticsSection() {
+  const { stats } = useData();
+  const activeStatus = stats.activeStatus || { applied: 0, oa: 0, interview: 0, offer: 0 };
+  const total = Math.max(stats.totalApplications?.count || 0, 1);
+
+  const applicationStatusData = [
+    { label: "Applied", count: activeStatus.applied, total, color: "bg-indigo-500" },
+    { label: "OA", count: activeStatus.oa, total, color: "bg-[#2e3545]" },
+    { label: "Interview", count: activeStatus.interview, total, color: "bg-[#3f2f6a]" },
+    { label: "Offer", count: activeStatus.offer, total, color: "bg-emerald-500" },
+  ];
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
       {/* Left Column: Application Stage Multi-Progress Area */}

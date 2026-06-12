@@ -1,13 +1,14 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
-import { atsData } from '../../../mock/dashboardData';
+import { useData } from '../../../context/DataContext';
 import { Sparkles } from 'lucide-react';
 
 export default function ATSWidget() {
+  const { atsScore } = useData();
   const strokeWidth = 6;
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (atsData.score / 100) * circumference;
+  const strokeDashoffset = circumference - (atsScore.score / 100) * circumference;
 
   return (
     <Card className="bg-[#121214] border border-[#1e222b] flex flex-col justify-between h-full">
@@ -29,7 +30,7 @@ export default function ATSWidget() {
             />
           </svg>
           <div className="absolute text-center">
-            <span className="text-2xl font-black text-white">{atsData.score}</span>
+            <span className="text-2xl font-black text-white">{atsScore.score}</span>
             <span className="text-[9px] text-zinc-500 block">/ 100</span>
           </div>
         </div>
@@ -42,7 +43,7 @@ export default function ATSWidget() {
           </div>
           <h4 className="text-[13px] font-semibold text-white leading-snug">High compatibility with target roles.</h4>
           <p className="text-[10px] font-medium text-emerald-400 flex items-center gap-1">
-            <span className="bg-emerald-500/10 px-1 py-0.5 rounded font-bold">+8 points</span> since last update
+            <span className="bg-emerald-500/10 px-1.5 py-0.5 rounded font-bold">{atsScore.trend}</span>
           </p>
         </div>
       </CardContent>

@@ -1,14 +1,16 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
-import { trackedCompanies } from '../../../mock/dashboardData';
+import { useData } from '../../../context/DataContext';
 import { Building, Plus } from 'lucide-react';
 
 export default function TrackedCompanies() {
+  const { trackedCompanies, trackCompany } = useData();
+
   return (
     <Card className="bg-[#121214] border border-[#1e222b]">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="text-[10px] font-bold text-zinc-400 tracking-wider uppercase">Tracked Companies</CardTitle>
-        <span className="text-[10px] font-semibold text-zinc-500">32 Followed</span>
+        <span className="text-[10px] font-semibold text-zinc-500">{trackedCompanies.length} Followed</span>
       </CardHeader>
       <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-1">
         {trackedCompanies.map((comp) => {
@@ -41,7 +43,13 @@ export default function TrackedCompanies() {
         })}
 
         {/* Follow More card */}
-        <div className="p-3 bg-[#0f1115]/50 border border-dashed border-[#1e222b] rounded-xl flex items-center justify-center gap-2 hover:border-zinc-600 transition cursor-pointer text-zinc-500 hover:text-zinc-300">
+        <div 
+          onClick={() => {
+            const name = prompt("Enter company name to track:");
+            if (name) trackCompany(name);
+          }}
+          className="p-3 bg-[#0f1115]/50 border border-dashed border-[#1e222b] rounded-xl flex items-center justify-center gap-2 hover:border-zinc-650 transition cursor-pointer text-zinc-500 hover:text-zinc-300"
+        >
           <Plus className="w-4 h-4" />
           <span className="text-xs font-semibold">Follow More</span>
         </div>

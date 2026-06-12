@@ -1,0 +1,234 @@
+{
+  "info": {
+    "name": "CareerPilot AI — Phase 3: Profile Management",
+    "description": "Complete Postman collection for Phase 3 Profile Management API.\n\nSetup:\n1. Set BASE_URL to http://localhost:5000\n2. Run Login first — TOKEN auto-saves\n3. All profile requests use {{TOKEN}} automatically",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "BASE_URL", "value": "http://localhost:5000", "type": "string" },
+    { "key": "TOKEN", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "🔐 Auth (Setup)",
+      "item": [
+        {
+          "name": "Login (Get Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) {",
+                  "  pm.collectionVariables.set('TOKEN', res.token);",
+                  "  console.log('✅ Token saved');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@gmail.com\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": { "raw": "{{BASE_URL}}/api/auth/login", "host": ["{{BASE_URL}}"], "path": ["api", "auth", "login"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 Profile",
+      "item": [
+        {
+          "name": "1. GET Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": { "raw": "{{BASE_URL}}/api/profile", "host": ["{{BASE_URL}}"], "path": ["api", "profile"] },
+            "description": "Returns full profile of logged-in user.\n\nExpected Response:\n{\n  \"success\": true,\n  \"profile\": {\n    \"id\": \"...\",\n    \"name\": \"Sharanya\",\n    \"email\": \"test@gmail.com\",\n    \"skills\": [],\n    \"desiredRoles\": [],\n    \"preferredLocations\": [],\n    \"workType\": \"\",\n    \"followedCompanies\": [],\n    \"avatar\": \"\"\n  }\n}"
+          }
+        },
+        {
+          "name": "2. UPDATE Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sharanya Updated\",\n  \"skills\": [\"React\", \"Node.js\", \"MongoDB\"],\n  \"desiredRoles\": [\"Full Stack Developer\", \"Frontend Developer\"],\n  \"preferredLocations\": [\"Remote\", \"Bangalore\"],\n  \"workType\": \"Remote\"\n}"
+            },
+            "url": { "raw": "{{BASE_URL}}/api/profile", "host": ["{{BASE_URL}}"], "path": ["api", "profile"] },
+            "description": "Update multiple profile fields at once.\n\nAll fields are optional — only provided fields are updated."
+          }
+        }
+      ]
+    },
+    {
+      "name": "🛠️ Skills",
+      "item": [
+        {
+          "name": "3. ADD Skill",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"skill\": \"React\"\n}"
+            },
+            "url": { "raw": "{{BASE_URL}}/api/profile/skills", "host": ["{{BASE_URL}}"], "path": ["api", "profile", "skills"] },
+            "description": "Add a single skill. Duplicate check is case-insensitive.\n\nExpected Response:\n{\n  \"success\": true,\n  \"message\": \"Skill 'React' added successfully.\",\n  \"skills\": [\"React\"]\n}\n\nError (duplicate):\n{\n  \"success\": false,\n  \"message\": \"Skill 'React' already exists in your profile.\"\n}"
+          }
+        },
+        {
+          "name": "4. REMOVE Skill",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": {
+              "raw": "{{BASE_URL}}/api/profile/skills/React",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "profile", "skills", "React"]
+            },
+            "description": "Remove a skill by name in the URL path.\n\nFor skills with spaces: encode the URL\nExample: /api/profile/skills/Node.js\nExample: /api/profile/skills/Machine%20Learning\n\nExpected Response:\n{\n  \"success\": true,\n  \"message\": \"Skill 'React' removed successfully.\",\n  \"skills\": []\n}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎯 Career Preferences",
+      "item": [
+        {
+          "name": "5. UPDATE Preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"desiredRoles\": [\"Full Stack Developer\", \"Backend Engineer\"],\n  \"preferredLocations\": [\"Remote\", \"Bangalore\", \"Hyderabad\"],\n  \"workType\": \"Hybrid\"\n}"
+            },
+            "url": { "raw": "{{BASE_URL}}/api/profile/preferences", "host": ["{{BASE_URL}}"], "path": ["api", "profile", "preferences"] },
+            "description": "Update career preferences. All 3 fields are optional.\n\nvalid workType values: Remote | On-site | Hybrid | Any\n\nExpected Response:\n{\n  \"success\": true,\n  \"message\": \"Career preferences updated successfully.\",\n  \"preferences\": {\n    \"desiredRoles\": [...],\n    \"preferredLocations\": [...],\n    \"workType\": \"Hybrid\"\n  }\n}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏢 Followed Companies",
+      "item": [
+        {
+          "name": "6. FOLLOW Company",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"companyName\": \"Google\"\n}"
+            },
+            "url": { "raw": "{{BASE_URL}}/api/profile/follow-company", "host": ["{{BASE_URL}}"], "path": ["api", "profile", "follow-company"] },
+            "description": "Follow a company. Duplicate check is case-insensitive.\n\nExpected Response:\n{\n  \"success\": true,\n  \"message\": \"Now following 'Google'.\",\n  \"followedCompanies\": [\"Google\"]\n}\n\nError (duplicate):\n{\n  \"success\": false,\n  \"message\": \"You are already following 'Google'.\"\n}"
+          }
+        },
+        {
+          "name": "7. UNFOLLOW Company",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": {
+              "raw": "{{BASE_URL}}/api/profile/follow-company/Google",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "profile", "follow-company", "Google"]
+            },
+            "description": "Unfollow a company. Company name goes in URL.\n\nFor companies with spaces: use URL encoding\nExample: /api/profile/follow-company/Goldman%20Sachs\n\nExpected Response:\n{\n  \"success\": true,\n  \"message\": \"Unfollowed 'Google'.\",\n  \"followedCompanies\": []\n}"
+          }
+        },
+        {
+          "name": "8. GET Followed Companies",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": { "raw": "{{BASE_URL}}/api/profile/followed-companies", "host": ["{{BASE_URL}}"], "path": ["api", "profile", "followed-companies"] },
+            "description": "Get list of all followed companies.\n\nExpected Response:\n{\n  \"success\": true,\n  \"count\": 2,\n  \"followedCompanies\": [\"Google\", \"Microsoft\"]\n}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "❌ Error Cases",
+      "item": [
+        {
+          "name": "ERR — No Token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{BASE_URL}}/api/profile", "host": ["{{BASE_URL}}"], "path": ["api", "profile"] },
+            "description": "Expected: 401 Not authorized. No token provided."
+          }
+        },
+        {
+          "name": "ERR — Add Duplicate Skill",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"skill\": \"React\"\n}" },
+            "url": { "raw": "{{BASE_URL}}/api/profile/skills", "host": ["{{BASE_URL}}"], "path": ["api", "profile", "skills"] },
+            "description": "Run after adding React. Expected: 409 Conflict."
+          }
+        },
+        {
+          "name": "ERR — Remove Non-existent Skill",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": { "raw": "{{BASE_URL}}/api/profile/skills/PythonXYZ", "host": ["{{BASE_URL}}"], "path": ["api", "profile", "skills", "PythonXYZ"] },
+            "description": "Expected: 404 Skill not found."
+          }
+        },
+        {
+          "name": "ERR — Invalid workType",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"workType\": \"FullTime\"\n}" },
+            "url": { "raw": "{{BASE_URL}}/api/profile/preferences", "host": ["{{BASE_URL}}"], "path": ["api", "profile", "preferences"] },
+            "description": "Expected: 400 workType must be one of: Remote, On-site, Hybrid, Any."
+          }
+        },
+        {
+          "name": "ERR — Follow Duplicate Company",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"companyName\": \"Google\"\n}" },
+            "url": { "raw": "{{BASE_URL}}/api/profile/follow-company", "host": ["{{BASE_URL}}"], "path": ["api", "profile", "follow-company"] },
+            "description": "Run after following Google. Expected: 409 Conflict."
+          }
+        }
+      ]
+    }
+  ]
+}

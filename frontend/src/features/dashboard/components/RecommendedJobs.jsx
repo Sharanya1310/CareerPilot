@@ -1,10 +1,11 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
-import { recommendedJobs } from '../../../mock/dashboardData';
+import { useData } from '../../../context/DataContext';
 import { Sparkles, ArrowRight } from 'lucide-react';
 
 export default function RecommendedJobs() {
+  const { recommendedJobs } = useData();
   return (
     <Card className="bg-[#121214] border border-[#1e222b] h-full">
       <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">

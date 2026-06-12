@@ -1,8 +1,9 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
-import { recentApplications } from '../../../mock/dashboardData';
+import { useData } from '../../../context/DataContext';
 
 export default function RecentApplications() {
+  const { recentApplications } = useData();
   return (
     <Card className="bg-[#121214] border border-[#1e222b]">
       <CardHeader className="pb-3">
