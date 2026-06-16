@@ -40,6 +40,28 @@ const userSchema = new mongoose.Schema(
       },
     },
 
+    toolsSkills: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: function (arr) {
+          return arr.length <= 50;
+        },
+        message: "You can add a maximum of 50 tools",
+      },
+    },
+
+    keywords: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: function (arr) {
+          return arr.length <= 50;
+        },
+        message: "You can add a maximum of 50 keywords",
+      },
+    },
+
     desiredRoles: {
       type: [String],
       default: [],
@@ -123,6 +145,8 @@ userSchema.methods.toPublicJSON = function () {
     name: this.name,
     email: this.email,
     skills: this.skills,
+    toolsSkills: this.toolsSkills,
+    keywords: this.keywords,
     desiredRoles: this.desiredRoles,
     preferredLocations: this.preferredLocations,
     workType: this.workType,

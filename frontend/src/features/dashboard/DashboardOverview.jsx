@@ -6,11 +6,10 @@ import ATSWidget from './components/ATSWidget';
 import MissingSkills from './components/MissingSkills';
 import RecommendedJobs from './components/RecommendedJobs';
 import RecentApplications from './components/RecentApplications';
-import TrackedCompanies from './components/TrackedCompanies';
 import QuickActions from './components/QuickActions';
 import UpcomingInterviews from './components/UpcomingInterviews';
 
-export default function DashboardOverview() {
+export default function DashboardOverview({ onPageChange }) {
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -32,12 +31,12 @@ export default function DashboardOverview() {
 
       {/* Row 3: ATS Score (left) & Missing Skills (right) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <ATSWidget />
+        <ATSWidget onPageChange={onPageChange} />
         <MissingSkills />
       </div>
 
       {/* Row 4: Recommended Jobs */}
-      <RecommendedJobs />
+      <RecommendedJobs onPageChange={onPageChange} />
 
       {/* Row 5: Recent Applications (left) & Upcoming Interviews (right) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -49,11 +48,8 @@ export default function DashboardOverview() {
         </div>
       </div>
 
-      {/* Row 6: Tracked Companies */}
-      <TrackedCompanies />
-      
-      {/* Row 7: Quick Actions */}
-      <QuickActions />
+      {/* Row 6: Quick Actions */}
+      <QuickActions onPageChange={onPageChange} />
     </div>
   );
 }

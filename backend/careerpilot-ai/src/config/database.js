@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import seedJobs from "./jobSeeder.js";
+import seedExperiences from "./experienceSeeder.js";
 
 const connectDB = async () => {
   try {
@@ -13,6 +14,9 @@ const connectDB = async () => {
 
     // Seed default jobs
     await seedJobs();
+
+    // Seed default interview experiences
+    await seedExperiences();
 
     // Connection event listeners
     mongoose.connection.on("disconnected", () => {

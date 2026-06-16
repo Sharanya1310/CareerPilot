@@ -12,21 +12,20 @@ export const getProfile = asyncHandler(async (req, res) => {
   const user = req.user;
 
   res.status(200).json({
-    success: true,
-    profile: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      skills: user.skills,
-      desiredRoles: user.desiredRoles,
-      preferredLocations: user.preferredLocations,
-      workType: user.workType,
-      followedCompanies: user.followedCompanies,
-      avatar: user.avatar,
-      lastLogin: user.lastLogin,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    },
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    skills: user.skills,
+    toolsSkills: user.toolsSkills || [],
+    keywords: user.keywords || [],
+    desiredRoles: user.desiredRoles,
+    preferredLocations: user.preferredLocations,
+    workType: user.workType,
+    followedCompanies: user.followedCompanies,
+    avatar: user.avatar,
+    lastLogin: user.lastLogin,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
   });
 });
 
@@ -36,7 +35,7 @@ export const getProfile = asyncHandler(async (req, res) => {
 // Protected
 // ─────────────────────────────────────────────────────────────────
 export const updateProfile = asyncHandler(async (req, res) => {
-  const { name, skills, desiredRoles, preferredLocations, workType, avatar } = req.body;
+  const { name, skills, toolsSkills, keywords, desiredRoles, preferredLocations, workType, avatar } = req.body;
 
   // Validate name if provided
   if (name !== undefined) {
@@ -55,6 +54,26 @@ export const updateProfile = asyncHandler(async (req, res) => {
     }
     if (skills.length > 50) {
       throw new AppError("You can add a maximum of 50 skills.", 400);
+    }
+  }
+
+  // Validate toolsSkills if provided
+  if (toolsSkills !== undefined) {
+    if (!Array.isArray(toolsSkills)) {
+      throw new AppError("Tools must be an array of strings.", 400);
+    }
+    if (toolsSkills.length > 50) {
+      throw new AppError("You can add a maximum of 50 tools.", 400);
+    }
+  }
+
+  // Validate keywords if provided
+  if (keywords !== undefined) {
+    if (!Array.isArray(keywords)) {
+      throw new AppError("Keywords must be an array of strings.", 400);
+    }
+    if (keywords.length > 50) {
+      throw new AppError("You can add a maximum of 50 keywords.", 400);
     }
   }
 
@@ -88,6 +107,8 @@ export const updateProfile = asyncHandler(async (req, res) => {
   const updates = {};
   if (name !== undefined) updates.name = name.trim();
   if (skills !== undefined) updates.skills = [...new Set(skills.map((s) => s.trim()).filter(Boolean))];
+  if (toolsSkills !== undefined) updates.toolsSkills = [...new Set(toolsSkills.map((t) => t.trim()).filter(Boolean))];
+  if (keywords !== undefined) updates.keywords = [...new Set(keywords.map((k) => k.trim()).filter(Boolean))];
   if (desiredRoles !== undefined) updates.desiredRoles = [...new Set(desiredRoles.map((r) => r.trim()).filter(Boolean))];
   if (preferredLocations !== undefined) updates.preferredLocations = [...new Set(preferredLocations.map((l) => l.trim()).filter(Boolean))];
   if (workType !== undefined) updates.workType = workType;
@@ -104,22 +125,20 @@ export const updateProfile = asyncHandler(async (req, res) => {
   );
 
   res.status(200).json({
-    success: true,
-    message: "Profile updated successfully.",
-    profile: {
-      id: updatedUser._id,
-      name: updatedUser.name,
-      email: updatedUser.email,
-      skills: updatedUser.skills,
-      desiredRoles: updatedUser.desiredRoles,
-      preferredLocations: updatedUser.preferredLocations,
-      workType: updatedUser.workType,
-      followedCompanies: updatedUser.followedCompanies,
-      avatar: updatedUser.avatar,
-      lastLogin: updatedUser.lastLogin,
-      createdAt: updatedUser.createdAt,
-      updatedAt: updatedUser.updatedAt,
-    },
+    id: updatedUser._id,
+    name: updatedUser.name,
+    email: updatedUser.email,
+    skills: updatedUser.skills,
+    toolsSkills: updatedUser.toolsSkills || [],
+    keywords: updatedUser.keywords || [],
+    desiredRoles: updatedUser.desiredRoles,
+    preferredLocations: updatedUser.preferredLocations,
+    workType: updatedUser.workType,
+    followedCompanies: updatedUser.followedCompanies,
+    avatar: updatedUser.avatar,
+    lastLogin: updatedUser.lastLogin,
+    createdAt: updatedUser.createdAt,
+    updatedAt: updatedUser.updatedAt,
   });
 });
 

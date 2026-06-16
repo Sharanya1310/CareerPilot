@@ -1,10 +1,9 @@
-import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { useData } from '../../../context/DataContext';
 import { Sparkles, ArrowRight } from 'lucide-react';
 
-export default function RecommendedJobs() {
+export default function RecommendedJobs({ onPageChange }) {
   const { recommendedJobs } = useData();
   return (
     <Card className="bg-[#121214] border border-[#1e222b] h-full">
@@ -13,12 +12,15 @@ export default function RecommendedJobs() {
           <Sparkles className="w-4 h-4 text-indigo-400" />
           <CardTitle className="text-[10px] font-bold text-zinc-400 tracking-wider uppercase">Recommended Jobs</CardTitle>
         </div>
-        <button className="text-xs font-semibold text-zinc-400 hover:text-white flex items-center transition-colors">
+        <button 
+          onClick={() => onPageChange?.('Job Discovery')}
+          className="text-xs font-semibold text-zinc-400 hover:text-white flex items-center transition-colors"
+        >
           Explore All <ArrowRight className="ml-1 w-3 h-3" />
         </button>
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-        {recommendedJobs.map((job) => (
+        {recommendedJobs.slice(0, 2).map((job) => (
           <div 
             key={job.id} 
             className="p-4 bg-[#0f1115] border border-[#1e222b] rounded-xl flex flex-col justify-between hover:border-zinc-700 transition group cursor-pointer h-28"
@@ -33,8 +35,8 @@ export default function RecommendedJobs() {
               </Badge>
             </div>
             
-            <div className="flex gap-1.5 mt-3">
-              {job.tags.map((tag) => (
+            <div className="flex gap-1.5 mt-3 flex-wrap">
+              {(job.skills || job.tags || []).slice(0, 4).map((tag) => (
                 <span key={tag} className="text-[9px] font-semibold text-zinc-500 bg-[#161a23] px-2 py-0.5 rounded border border-[#1e222b]">
                   {tag}
                 </span>

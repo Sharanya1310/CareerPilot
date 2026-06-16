@@ -1,18 +1,25 @@
-import React, { useState } from 'react';
-import { 
-  Search, Plus, Bell, Filter, Clock, AlertTriangle, 
-  Users, Calendar, FileText, ChevronRight, Download, MoreHorizontal,
-  ArrowUpRight, CheckCircle2, TrendingUp, Sparkles, Star, ThumbsUp, ThumbsDown, Video, FolderOpen,
-  Briefcase, X
-} from 'lucide-react';
-import { Badge } from '../components/ui/Badge';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { Search, Plus, Bell, Clock, Briefcase, X } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useData } from '../context/DataContext';
+import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 
 export default function ApplicationTracker() {
-  const { 
-    applications, addApplication, updateApplicationStage, deleteApplication, stats 
+  const toast = useToast();
+  const {
+    applications, addApplication, updateApplicationStage, deleteApplication,
+    pendingAction, setPendingAction, profile,
   } = useData();
+
+  const initials = (profile?.name || 'U').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+
+  useEffect(() => {
+    if (pendingAction === 'open_add_application') {
+      setIsModalOpen(true);
+      setPendingAction(null);
+    }
+  }, [pendingAction, setPendingAction]);
   const [searchQuery, setSearchQuery] = useState('');
   
   // Modal State
@@ -24,27 +31,99 @@ export default function ApplicationTracker() {
   const [newDeadline, setNewDeadline] = useState('2d left');
   const [newInterviewer, setNewInterviewer] = useState('');
 
-  // Heatmap configuration
-  const heatmapRows = 7;
-  const heatmapCols = 44; 
-  
-  const getHeatmapColor = (w, d) => {
-    const val = (w * 5 + d * 3) % 13;
-    if (val === 0 || val === 4 || val === 8) return 'bg-zinc-100 dark:bg-[#161920] border border-zinc-200 dark:border-zinc-900'; 
-    if (val === 1 || val === 5 || val === 9) return 'bg-indigo-100 dark:bg-indigo-950/60 border border-indigo-200/50 dark:border-indigo-950/20';
-    if (val === 2 || val === 6 || val === 10) return 'bg-indigo-300 dark:bg-indigo-800/40 border border-indigo-300/30 dark:border-indigo-800/10';
-    if (val === 3 || val === 7 || val === 11) return 'bg-indigo-500/80 dark:bg-indigo-600/70 border border-indigo-500/40 dark:border-indigo-600/20';
-    return 'bg-indigo-600 dark:bg-indigo-500 border border-indigo-600/20 dark:border-indigo-400/20'; 
+  // Heatmap: 26 columns (≈6 months), cell size fills container width
+  const COLS = 32;
+  const GAP  = 2;
+  const heatmapRef = useRef(null);
+  const [numCols, setNumCols]   = useState(COLS);
+  const [cellSize, setCellSize] = useState(11);
+
+  useEffect(() => {
+    const el = heatmapRef.current;
+    if (!el) return;
+    const update = () => {
+      const w    = el.clientWidth;
+      const cols = Math.min(COLS, Math.max(12, Math.floor((w + GAP) / (11 + GAP))));
+      const size = Math.max(8, Math.floor((w - (cols - 1) * GAP) / cols));
+      setNumCols(cols);
+      setCellSize(size);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const { heatmapWeeks, heatmapMaxCount } = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // last 7 months is the "active" window (includes November)
+    const activeStart = new Date(today);
+    activeStart.setMonth(today.getMonth() - 7);
+
+    // grid starts numCols weeks back, aligned to Sunday of that week
+    const todaySunday = new Date(today);
+    todaySunday.setDate(today.getDate() - today.getDay());
+    const gridStart = new Date(todaySunday);
+    gridStart.setDate(todaySunday.getDate() - (numCols - 1) * 7);
+
+    const countMap = {};
+    applications.forEach(app => {
+      const ts = app.createdAt || app.updatedAt;
+      if (ts) {
+        const d = new Date(ts);
+        d.setHours(0, 0, 0, 0);
+        const key = d.toISOString().slice(0, 10);
+        countMap[key] = (countMap[key] || 0) + 1;
+      }
+    });
+
+    let maxCount = 0;
+    const weeks = [];
+    for (let w = 0; w < numCols; w++) {
+      const week = [];
+      for (let d = 0; d < 7; d++) {
+        const day = new Date(gridStart);
+        day.setDate(gridStart.getDate() + w * 7 + d);
+        const key = day.toISOString().slice(0, 10);
+        const count = countMap[key] || 0;
+        const active = day >= activeStart && day <= today;
+        if (active && count > maxCount) maxCount = count;
+        week.push({ date: new Date(day), count, active });
+      }
+      weeks.push(week);
+    }
+    return { heatmapWeeks: weeks, heatmapMaxCount: maxCount };
+  }, [applications, numCols]);
+
+  const isDark = document.documentElement.classList.contains('dark');
+
+  const getHeatmapColor = (day) => {
+    if (!day.active) return isDark ? 'bg-[#0d1117]' : 'bg-transparent';
+    if (day.count === 0) return isDark ? 'bg-[#161f1a]' : 'bg-[#ebedf0]';
+    const ratio = day.count / Math.max(heatmapMaxCount, 1);
+    if (isDark) {
+      if (ratio <= 0.25) return 'bg-[#1a5c30]';
+      if (ratio <= 0.5)  return 'bg-[#27a044]';
+      if (ratio <= 0.75) return 'bg-[#2dc653]';
+      return 'bg-[#39d353]';
+    } else {
+      if (ratio <= 0.25) return 'bg-[#9be9a8]';
+      if (ratio <= 0.5)  return 'bg-[#40c463]';
+      if (ratio <= 0.75) return 'bg-[#30a14e]';
+      return 'bg-[#216e39]';
+    }
   };
 
-  const activeStatus = stats.activeStatus || { applied: 0, oa: 0, interview: 0, offer: 0 };
   const totalAppsCount = applications.length;
+  const pct = (n) => totalAppsCount > 0 ? Math.round((n / totalAppsCount) * 100) : 0;
 
   const funnelStages = [
-    { label: "Applied", percentage: totalAppsCount > 0 ? Math.round((activeStatus.applied / totalAppsCount) * 100) : 0, color: "bg-indigo-600" },
-    { label: "Assessment", percentage: totalAppsCount > 0 ? Math.round((activeStatus.oa / totalAppsCount) * 100) : 0, color: "bg-indigo-500/80" },
-    { label: "Interview", percentage: totalAppsCount > 0 ? Math.round((activeStatus.interview / totalAppsCount) * 100) : 0, color: "bg-indigo-400/60" },
-    { label: "Offer", percentage: totalAppsCount > 0 ? Math.round((activeStatus.offer / totalAppsCount) * 100) : 0, color: "bg-indigo-300/40" }
+    { label: "Applied",    percentage: pct(applications.filter(a => a.stage === 'Applied').length),                       color: "bg-indigo-600" },
+    { label: "Assessment", percentage: pct(applications.filter(a => a.stage === 'Assessment' || a.stage === 'OA').length), color: "bg-indigo-500/80" },
+    { label: "Interview",  percentage: pct(applications.filter(a => a.stage === 'Interview').length),                     color: "bg-indigo-400/60" },
+    { label: "Offer",      percentage: pct(applications.filter(a => a.stage === 'Offer').length),                         color: "bg-indigo-300/40" },
   ];
 
   // Filter applications by search query
@@ -65,7 +144,7 @@ export default function ApplicationTracker() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newCompany || !newRole) {
-      alert("Company and Role are required.");
+      toast({ type: 'error', title: 'Missing fields', message: 'Company and Role are required.' });
       return;
     }
     
@@ -124,12 +203,8 @@ export default function ApplicationTracker() {
             <Bell className="w-4 h-4" />
           </button>
           
-          <div className="w-8 h-8 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-700">
-            <img 
-              src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=100&q=80" 
-              alt="User Avatar"
-              className="w-full h-full object-cover"
-            />
+          <div className="w-8 h-8 rounded-full border border-indigo-500/30 bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 flex items-center justify-center flex-shrink-0">
+            <span className="text-[11px] font-bold text-indigo-300 select-none">{initials}</span>
           </div>
         </div>
       </div>
@@ -138,21 +213,44 @@ export default function ApplicationTracker() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Job Hunt Activity Heatmap */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#0f1115] border border-[#e2e8f0] dark:border-[#1e222b] rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="lg:col-span-2 bg-[#0f1115] border border-[#1e222b] rounded-2xl p-5 shadow-sm space-y-3">
           <div className="flex justify-between items-center">
-            <h3 className="text-sm font-extrabold text-zinc-800 dark:text-zinc-100">Job Hunt Activity</h3>
-            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Last 90 Days</span>
+            <h3 className="text-sm font-extrabold text-zinc-100">Job Hunt Activity</h3>
+            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Last 6 Months</span>
           </div>
 
-          {/* Grid display */}
-          <div className="overflow-x-auto pb-2">
-            <div className="flex flex-col gap-[3.5px] min-w-[500px]">
-              {Array.from({ length: heatmapRows }).map((_, rIdx) => (
-                <div key={rIdx} className="flex gap-[3.5px]">
-                  {Array.from({ length: heatmapCols }).map((_, cIdx) => (
-                    <div 
-                      key={cIdx} 
-                      className={`w-[9px] h-[9px] rounded-[1.5px] flex-shrink-0 transition-all ${getHeatmapColor(cIdx, rIdx)}`}
+          {/* GitHub-style heatmap */}
+          <div ref={heatmapRef} className="w-full">
+            {/* Month labels */}
+            <div className="flex mb-2" style={{ gap: GAP }}>
+              {heatmapWeeks.map((week, wIdx) => {
+                const first = week[0].date;
+                const prev  = wIdx > 0 ? heatmapWeeks[wIdx - 1][0].date : null;
+                const show  = !prev || first.getMonth() !== prev.getMonth();
+                return (
+                  <div key={wIdx} style={{ width: cellSize, flexShrink: 0, height: 14, overflow: 'visible' }}>
+                    {show && (
+                      <span className="text-[9px] text-zinc-400 font-medium leading-none whitespace-nowrap block">
+                        {first.toLocaleDateString('en-US', { month: 'short' })}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Cell grid */}
+            <div className="flex" style={{ gap: GAP }}>
+              {heatmapWeeks.map((week, wIdx) => (
+                <div key={wIdx} className="flex flex-col" style={{ gap: GAP }}>
+                  {week.map((day, dIdx) => (
+                    <div
+                      key={dIdx}
+                      style={{ width: cellSize, height: cellSize }}
+                      title={day.active && day.count > 0
+                        ? `${day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: ${day.count} application${day.count !== 1 ? 's' : ''}`
+                        : undefined}
+                      className={`rounded-[2px] transition-colors ${getHeatmapColor(day)}`}
                     />
                   ))}
                 </div>
@@ -160,40 +258,46 @@ export default function ApplicationTracker() {
             </div>
           </div>
 
-          {/* Bottom legend & total indicator */}
-          <div className="flex items-center justify-between text-[10px] text-zinc-500 pt-1">
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-zinc-400 uppercase tracking-wider">Less</span>
-              <div className="w-[9px] h-[9px] rounded-[1.5px] bg-zinc-100 dark:bg-[#161920]" />
-              <div className="w-[9px] h-[9px] rounded-[1.5px] bg-indigo-100 dark:bg-indigo-950/60" />
-              <div className="w-[9px] h-[9px] rounded-[1.5px] bg-indigo-300 dark:bg-indigo-800/40" />
-              <div className="w-[9px] h-[9px] rounded-[1.5px] bg-indigo-500/80 dark:bg-indigo-600/70" />
-              <div className="w-[9px] h-[9px] rounded-[1.5px] bg-indigo-600 dark:bg-indigo-500" />
-              <span className="font-semibold text-zinc-400 uppercase tracking-wider">More</span>
-            </div>
-            
-            <span className="font-bold text-indigo-600 dark:text-indigo-400">
-              {totalAppsCount} active applications this season
-            </span>
+          {/* Legend */}
+          <div className="flex items-center justify-end gap-1.5 text-[10px] text-zinc-400 pt-1">
+            <span className="font-medium">Less</span>
+            {(isDark
+              ? ['#161f1a', '#1a5c30', '#27a044', '#2dc653', '#39d353']
+              : ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39']
+            ).map(color => (
+              <div key={color} className="w-[10px] h-[10px] rounded-[2px]" style={{ backgroundColor: color }} />
+            ))}
+            <span className="font-medium">More</span>
           </div>
         </div>
 
         {/* Success Funnel Card */}
-        <div className="lg:col-span-1 bg-white dark:bg-[#0f1115] border border-[#e2e8f0] dark:border-[#1e222b] rounded-2xl p-5 shadow-sm space-y-4">
-          <h3 className="text-sm font-extrabold text-zinc-800 dark:text-zinc-100">Success Funnel</h3>
-          
-          <div className="space-y-3 pt-1">
+        <div className="lg:col-span-1 bg-white dark:bg-[#0f1115] border border-[#e2e8f0] dark:border-[#1e222b] rounded-2xl p-5 shadow-sm flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-extrabold text-zinc-800 dark:text-zinc-100">Success Funnel</h3>
+            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">{totalAppsCount} total</span>
+          </div>
+
+          <div className="flex flex-col gap-2">
             {funnelStages.map((stage) => (
-              <div key={stage.label} className="flex items-center gap-4">
-                <div className="flex-1 bg-zinc-100 dark:bg-zinc-800 h-6 rounded-md overflow-hidden">
-                  <div className={`h-full ${stage.color} rounded-md transition-all`} style={{ width: `${stage.percentage}%` }} />
+              <div key={stage.label} className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">{stage.label}</span>
+                  <span className="text-[10px] font-black text-indigo-500">{stage.percentage}%</span>
                 </div>
-                <span className="text-[10px] font-black text-zinc-600 dark:text-zinc-300 w-24 text-left flex-shrink-0">
-                  {stage.percentage}% {stage.label}
-                </span>
+                <div className="w-full bg-zinc-100 dark:bg-zinc-800/60 rounded-full h-5 overflow-hidden">
+                  <div
+                    className={`h-full ${stage.color} rounded-full transition-all duration-700`}
+                    style={{ width: `${Math.max(stage.percentage, stage.percentage > 0 ? 4 : 0)}%` }}
+                  />
+                </div>
               </div>
             ))}
           </div>
+
+          {totalAppsCount === 0 && (
+            <p className="text-[10px] text-zinc-400 text-center mt-4 italic">Add applications to see funnel data</p>
+          )}
         </div>
 
       </div>
@@ -204,16 +308,12 @@ export default function ApplicationTracker() {
           <h2 className="text-base font-black text-zinc-850 dark:text-zinc-100">Live Pipeline</h2>
           
           <div className="flex -space-x-2">
-            <img 
-              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&q=80" 
-              alt="Team 1" 
-              className="w-5 h-5 rounded-full object-cover border border-white dark:border-[#0f1115]"
-            />
-            <img 
-              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80" 
-              alt="Team 2" 
-              className="w-5 h-5 rounded-full object-cover border border-white dark:border-[#0f1115]"
-            />
+            <div className="w-5 h-5 rounded-full border border-white dark:border-[#0f1115] bg-indigo-500/20 flex items-center justify-center">
+              <span className="text-[8px] font-bold text-indigo-300 select-none">{initials[0]}</span>
+            </div>
+            <div className="w-5 h-5 rounded-full border border-white dark:border-[#0f1115] bg-purple-500/20 flex items-center justify-center">
+              <span className="text-[8px] font-bold text-purple-300 select-none">{initials[1] || initials[0]}</span>
+            </div>
           </div>
         </div>
 
@@ -455,6 +555,7 @@ export default function ApplicationTracker() {
 
 // Kanban Card Component
 function KanbanCard({ app, onStageChange, onDelete }) {
+  const confirm = useConfirm();
   return (
     <div className="bg-white dark:bg-[#0f1115] border border-[#e2e8f0] dark:border-[#1e222b] hover:border-indigo-500/50 dark:hover:border-indigo-500/50 transition-all p-4 rounded-2xl shadow-sm space-y-3 cursor-pointer group">
       <div className="flex justify-between items-center">
@@ -477,9 +578,12 @@ function KanbanCard({ app, onStageChange, onDelete }) {
           <button 
             onClick={(e) => {
               e.stopPropagation();
-              if (confirm(`Delete ${app.company} application?`)) {
-                onDelete(app.id);
-              }
+              confirm({
+                title: `Delete ${app.company}?`,
+                message: 'This application will be permanently removed from your tracker.',
+                confirmLabel: 'Delete',
+                onConfirm: () => onDelete(app.id),
+              });
             }}
             className="text-zinc-500 hover:text-red-400 transition ml-1"
           >

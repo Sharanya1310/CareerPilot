@@ -35,10 +35,11 @@ export const uploadProfile = multer({
 });
 
 /**
- * Multer instance for resume/CV uploads
+ * Multer instance for resume/CV uploads — memory storage so we can
+ * parse text before uploading to Cloudinary
  */
 export const uploadResume = multer({
-  storage: createCloudinaryStorage("resumes"),
+  storage: multer.memoryStorage(),
   limits: { fileSize: FILE_CONSTRAINTS.MAX_FILE_SIZE },
   fileFilter: (req, file, cb) => {
     if (FILE_CONSTRAINTS.ALLOWED_RESUME_TYPES.includes(file.mimetype)) {
@@ -48,6 +49,16 @@ export const uploadResume = multer({
     }
   },
 });
+
+/**
+ * Upload a buffer to Cloudinary and return the result
+ */
+export const uploadBufferToCloudinary = (buffer, options) =>
+  new Promise((resolve, reject) => {
+    cloudinary.uploader
+      .upload_stream(options, (err, result) => (err ? reject(err) : resolve(result)))
+      .end(buffer);
+  });
 
 /**
  * Multer instance for generic file uploads

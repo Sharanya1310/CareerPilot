@@ -15,9 +15,8 @@ class DashboardService {
 
     // 2. Active Resume and ATS Telemetry
     const activeResume = resumes.find((r) => r.isActive) || resumes[0] || null;
-    const currentAtsScore = activeResume ? activeResume.atsScore : (user?.resumeScore || 78);
-    const percentile = activeResume ? activeResume.atsPercentile : 84;
-    const missingSkillsList = activeResume ? activeResume.missingSkills : ["Docker", "AWS (Lambda/S3)", "Redis"];
+    const currentAtsScore = activeResume ? (activeResume.atsScore ?? 0) : 0;
+    const missingSkillsList = activeResume ? activeResume.missingSkills : [];
 
     // 3. Status Breakdown
     const applied = applications.filter((a) => a.stage === "Applied").length;
@@ -68,7 +67,7 @@ class DashboardService {
     const trackedCompanies = followedList.map((company, index) => ({
       name: company,
       domain: `${company.toLowerCase().replace(/\s+/g, "")}.com`,
-      openings: (index + 2) % 3, // mock openings count based on profile companies
+      openings: 0,
     }));
 
     // 7. Format upcoming interviews list
@@ -97,15 +96,14 @@ class DashboardService {
 
       monthlyChartData.push({
         name: months[d.getMonth()],
-        // We add some base default counts for UI visualization so chart looks clean and full
-        applications: count + (i === 3 ? 12 : i === 2 ? 28 : i === 1 ? 35 : 0),
+        applications: count,
       });
     }
 
     // 9. Format Resume Optimization data
     const resumeOptimizationData = activeResume
       ? {
-          compatibilityScore: activeResume.atsScore,
+          compatibilityScore: activeResume.atsScore ?? 0,
           percentile: activeResume.atsPercentile,
           sectionScores: [
             { label: "Skills", score: activeResume.atsSectionScores?.skills ?? 92, color: "bg-indigo-500" },
@@ -120,7 +118,7 @@ class DashboardService {
             status: res.isActive ? "Active" : "Inactive",
           })),
           jobMatch: {
-            matchPercentage: activeResume.jobMatchScore ?? 82,
+            matchPercentage: activeResume.jobMatchScore ?? 0,
             missingSkills: activeResume.missingSkills ?? [],
             summary: activeResume.matchSummary ?? "Analysis complete.",
           },
@@ -153,26 +151,7 @@ class DashboardService {
       stats,
       atsScore: { score: currentAtsScore, trend: "+8 points since last update" },
       missingSkills: missingSkillsList,
-      recommendedJobs: [
-        {
-          id: 101,
-          title: "Full Stack Engineer",
-          company: "Stripe",
-          location: "Remote",
-          salary: "$180k - $240k",
-          match: 91,
-          tags: ["React", "Node.js", "Go"],
-        },
-        {
-          id: 102,
-          title: "Backend Developer (Python)",
-          company: "Airbnb",
-          location: "San Francisco",
-          salary: "Hybrid",
-          match: 85,
-          tags: ["Python", "Django", "PostgreSQL"],
-        },
-      ],
+      recommendedJobs: [],
       recentApplications,
       trackedCompanies,
       upcomingInterviews,

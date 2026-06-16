@@ -2,179 +2,321 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Theme Variables ────────────────────────────────────────────── */
 :root {
-  /* Light Theme Variables */
-  --background: #f4f6fa;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-alt: #f8fafc;
-  --border: #e8edf5;
-  --muted: #f1f5f9;
+  --background:   #eef1f8;
+  --foreground:   #0f172a;
+  --card:         #ffffff;
+  --card-alt:     #f5f7ff;
+  --card-alt2:    #eef1fb;
+  --border:       #e2e8f0;
+  --muted:        #f1f5f9;
   --muted-foreground: #64748b;
-  --accent: #e2e8f0;
-  --text-bright: #0f172a;
-  --text-primary: #334155;
-  --text-secondary: #475569;
-  
-  --sidebar-bg: #ffffff;
-  --sidebar-border: #e8edf5;
-  --sidebar-hover: #f1f5f9;
-  --sidebar-active: #e2e8f0;
-  --button-secondary-bg: #f1f5f9;
-  --button-secondary-hover: #e2e8f0;
+  --accent:       #ede9fe;
+  --text-bright:  #0f172a;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-muted:   #94a3b8;
+
+  --sidebar-bg:            #ffffff;
+  --sidebar-border:        #e8edf5;
+  --sidebar-hover:         #f5f3ff;
+  --sidebar-active-bg:     #ede9fe;
+  --sidebar-active-text:   #6366f1;
+  --button-secondary-bg:   #f1f5f9;
+  --button-secondary-hover:#e8edf5;
+
+  --shadow-sm: 0 1px 4px rgba(99,102,241,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 20px rgba(99,102,241,0.1),  0 2px 6px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 40px rgba(99,102,241,0.12), 0 4px 12px rgba(0,0,0,0.06);
 }
 
 .dark {
-  /* Dark Theme Variables matching the charcoal screenshot */
-  --background: #080808;
-  --foreground: #fafafa;
-  --card: #161618;
-  --card-alt: #0d0d0e;
-  --border: #222225;
-  --muted: #27272a;
+  --background:   #09090b;
+  --foreground:   #fafafa;
+  --card:         #111113;
+  --card-alt:     #0d0d0f;
+  --card-alt2:    #111317;
+  --border:       #1e222b;
+  --muted:        #27272a;
   --muted-foreground: #8e8e93;
-  --accent: #2e2e33;
-  --text-bright: #ffffff;
-  --text-primary: #8e8e93;
-  --text-secondary: #5e5e64;
+  --accent:       #1b1f2e;
+  --text-bright:  #ffffff;
+  --text-primary: #e4e4e7;
+  --text-secondary: #a1a1aa;
+  --text-muted:   #71717a;
 
-  --sidebar-bg: #0d0d0e;
-  --sidebar-border: #222225;
-  --sidebar-hover: #1e1e21;
-  --sidebar-active: #262629;
-  --button-secondary-bg: #1e1e21;
-  --button-secondary-hover: #2a2a2e;
+  --sidebar-bg:            #0d0d0f;
+  --sidebar-border:        #1e222b;
+  --sidebar-hover:         #1e1e22;
+  --sidebar-active-bg:     #1e1e2e;
+  --sidebar-active-text:   #818cf8;
+  --button-secondary-bg:   #1a1a1e;
+  --button-secondary-hover:#222228;
+
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.5);
+  --shadow-md: 0 4px 20px rgba(0,0,0,0.5);
+  --shadow-lg: 0 10px 40px rgba(0,0,0,0.6);
 }
 
+/* ─── Base ───────────────────────────────────────────────────────── */
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Custom scrollbar styling for a premium sleek look */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* ─── Scrollbar ──────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
+
+/* ─── Card Shadows (light mode only) ────────────────────────────── */
+html:not(.dark) .shadow-card,
+html:not(.dark) [class*="rounded-xl"][class*="border"] {
+  box-shadow: var(--shadow-sm);
 }
-::-webkit-scrollbar-track {
-  background: var(--background);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--accent);
+html:not(.dark) [class*="rounded-xl"][class*="border"]:hover {
+  box-shadow: var(--shadow-md);
 }
 
-/* Map Tailwind arbitrary layout colors to theme CSS variables */
-.bg-\[\#09090b\] {
-  background-color: var(--background) !important;
-}
-.bg-\[\#121214\] {
-  background-color: var(--card) !important;
-}
-.bg-\[\#0f1115\] {
-  background-color: var(--card-alt) !important;
-}
-.bg-\[\#0f1115\]\/45 {
-  background-color: rgba(241, 245, 249, 0.45) !important;
-}
-.dark .bg-\[\#0f1115\]\/45 {
-  background-color: rgba(15, 17, 21, 0.45) !important;
-}
-.bg-\[\#0f1115\]\/30 {
-  background-color: rgba(241, 245, 249, 0.3) !important;
-}
-.dark .bg-\[\#0f1115\]\/30 {
-  background-color: rgba(15, 17, 21, 0.3) !important;
-}
-.bg-\[\#1b1f29\] {
-  background-color: var(--sidebar-active) !important;
-}
-.bg-\[\#13161c\] {
-  background-color: var(--sidebar-hover) !important;
-}
-.bg-\[\#1c1f28\]\/60 {
-  background-color: var(--sidebar-hover) !important;
-}
-.bg-\[\#161a23\] {
-  background-color: var(--card-alt) !important;
-}
-.bg-\[\#161920\] {
-  background-color: var(--button-secondary-bg) !important;
-}
-.bg-\[\#161920\]\/60 {
-  background-color: var(--button-secondary-bg) !important;
-  opacity: 0.6;
-}
-.bg-\[\#161920\]\/40 {
-  background-color: var(--button-secondary-bg) !important;
-  opacity: 0.4;
-}
+/* ─── Background color remapping (dark hex → CSS vars) ──────────── */
+.bg-\[\#09090b\]        { background-color: var(--background)           !important; }
+.bg-\[\#121214\]        { background-color: var(--card)                 !important; }
+.bg-\[\#0f1115\]        { background-color: var(--card)                 !important; }
+.bg-\[\#0f1115\]\/45    { background-color: rgba(255,255,255,0.55)       !important; }
+.dark .bg-\[\#0f1115\]\/45 { background-color: rgba(15,17,21,0.45)      !important; }
+.bg-\[\#0f1115\]\/30    { background-color: rgba(255,255,255,0.4)        !important; }
+.dark .bg-\[\#0f1115\]\/30 { background-color: rgba(15,17,21,0.3)       !important; }
+.bg-\[\#1b1f29\]        { background-color: var(--sidebar-active-bg)    !important; }
+.bg-\[\#13161c\]        { background-color: var(--card-alt)             !important; }
+.bg-\[\#1c1f28\]\/60    { background-color: var(--card-alt)             !important; }
+.bg-\[\#161a23\]        { background-color: var(--card-alt)             !important; }
+.bg-\[\#161920\]        { background-color: var(--button-secondary-bg)  !important; }
+.bg-\[\#161920\]\/60    { background-color: var(--button-secondary-bg)  !important; opacity: 0.7; }
+.bg-\[\#161920\]\/40    { background-color: var(--button-secondary-bg)  !important; opacity: 0.5; }
+.bg-\[\#11131a\]        { background-color: var(--card-alt)             !important; }
+.bg-\[\#0c0d10\]\/95    { background-color: rgba(255,255,255,0.97)       !important; }
+.dark .bg-\[\#0c0d10\]\/95 { background-color: rgba(12,13,16,0.95)      !important; }
+.bg-\[\#232936\]        { background-color: var(--button-secondary-hover) !important; }
 
-/* Hover background overrides to map arbitrary colors to theme variables */
-.hover\:bg-\[\#1f2430\]:hover {
-  background-color: var(--button-secondary-hover) !important;
-}
-.hover\:bg-\[\#161920\]:hover {
-  background-color: var(--button-secondary-bg) !important;
-}
-.hover\:bg-\[\#13161c\]:hover {
-  background-color: var(--sidebar-hover) !important;
-}
-.hover\:bg-zinc-900:hover {
-  background-color: var(--sidebar-hover) !important;
-}
+/* ─── Dark-background inputs & secondary buttons → light ─────────── */
+html:not(.dark) .bg-\[\#09090b\],
+html:not(.dark) .bg-\[\#0a0a0c\] { background-color: var(--background) !important; }
+html:not(.dark) .bg-zinc-900,
+html:not(.dark) .bg-zinc-900\/50 { background-color: var(--muted)      !important; }
+html:not(.dark) .bg-zinc-800     { background-color: #e2e8f0           !important; }
+html:not(.dark) .bg-zinc-800\/80 { background-color: rgba(226,232,240,0.8) !important; }
+html:not(.dark) .bg-zinc-800\/20 { background-color: rgba(226,232,240,0.4) !important; }
+html:not(.dark) .bg-zinc-800\/60 { background-color: rgba(226,232,240,0.6) !important; }
 
-/* Border overrides */
-.border-\[\#1e222b\] {
-  border-color: var(--border) !important;
-}
-.border-\[\#1e222b\]\/50 {
-  border-color: var(--border) !important;
-  opacity: 0.7;
-}
+/* ─── Hover bg remapping ─────────────────────────────────────────── */
+.hover\:bg-\[\#1f2430\]:hover  { background-color: var(--button-secondary-hover) !important; }
+.hover\:bg-\[\#161920\]:hover  { background-color: var(--button-secondary-bg)    !important; }
+.hover\:bg-\[\#13161c\]:hover  { background-color: var(--sidebar-hover)          !important; }
+.hover\:bg-\[\#1b1f28\]:hover  { background-color: var(--sidebar-hover)          !important; }
+html:not(.dark) .hover\:bg-zinc-900:hover  { background-color: var(--muted)      !important; }
+html:not(.dark) .hover\:bg-zinc-800:hover  { background-color: #e2e8f0           !important; }
+html:not(.dark) .hover\:bg-zinc-800\/60:hover { background-color: rgba(226,232,240,0.6) !important; }
 
-/* Sidebar structure overrides */
+/* ─── Border remapping ───────────────────────────────────────────── */
+.border-\[\#1e222b\]       { border-color: var(--border) !important; }
+.border-\[\#1e222b\]\/50   { border-color: var(--border) !important; opacity: 0.7; }
+.border-\[\#232936\]       { border-color: var(--border) !important; }
+.divide-\[\#1e222b\]\/50 > :not([hidden]) ~ :not([hidden]) { border-color: var(--border) !important; }
+html:not(.dark) .border-zinc-800      { border-color: #e2e8f0 !important; }
+html:not(.dark) .border-zinc-800\/60  { border-color: rgba(226,232,240,0.6) !important; }
+html:not(.dark) .border-zinc-700      { border-color: #cbd5e1 !important; }
+html:not(.dark) .border-zinc-700\/50  { border-color: rgba(203,213,225,0.5) !important; }
+html:not(.dark) .border-zinc-700\/60  { border-color: rgba(203,213,225,0.6) !important; }
+
+/* ─── Sidebar overrides ──────────────────────────────────────────── */
 aside.bg-\[\#0f1115\] {
-  background-color: var(--sidebar-bg) !important;
+  background-color: var(--sidebar-bg)     !important;
   border-right-color: var(--sidebar-border) !important;
 }
-
-/* Light Mode Text overrides to ensure contrast */
-html:not(.dark) .text-white:not(.bg-\[\#5865f2\]):not(.bg-\[\#4752c4\]):not(.bg-brand):not(.bg-indigo-600):not(.bg-indigo-500):not(.text-indigo-400):not(.text-emerald-400):not(.text-amber-400) {
-  color: var(--text-bright) !important;
-}
-html:not(.dark) .text-zinc-100:not(.text-indigo-400):not(.text-emerald-400):not(.text-amber-400),
-html:not(.dark) .text-zinc-200:not(.text-indigo-400):not(.text-emerald-400):not(.text-amber-400),
-html:not(.dark) .text-zinc-300:not(.text-indigo-400):not(.text-emerald-400):not(.text-amber-400) {
-  color: var(--text-bright) !important;
-}
-html:not(.dark) .text-zinc-400 {
-  color: var(--text-primary) !important;
-}
-html:not(.dark) .text-zinc-500 {
-  color: var(--text-secondary) !important;
-}
-html:not(.dark) .text-zinc-350 {
-  color: var(--text-primary) !important;
-}
-html:not(.dark) .divide-\[\#1e222b\]\/50 > :not([hidden]) ~ :not([hidden]) {
-  border-color: var(--border) !important;
+.border-\[\#1e222b\].overflow-hidden.whitespace-nowrap {
+  border-top-color: var(--sidebar-border) !important;
 }
 
-/* Light Mode Hover Text overrides to ensure contrast */
-html:not(.dark) .hover\:text-white:hover,
+/* ─── Text remapping (light mode) ────────────────────────────────── */
+html:not(.dark) .text-zinc-100 { color: var(--text-bright)   !important; }
+html:not(.dark) .text-zinc-200 { color: var(--text-primary)  !important; }
+html:not(.dark) .text-zinc-300 { color: var(--text-primary)  !important; }
+html:not(.dark) .text-zinc-350 { color: var(--text-primary)  !important; }
+html:not(.dark) .text-zinc-400 { color: var(--text-secondary) !important; }
+html:not(.dark) .text-zinc-500 { color: var(--text-muted)    !important; }
+html:not(.dark) .text-zinc-550 { color: var(--text-muted)    !important; }
+html:not(.dark) .text-zinc-600 { color: #94a3b8              !important; }
+
+/* Preserve colored text in light mode */
+html:not(.dark) .text-indigo-400,
+html:not(.dark) .text-indigo-300,
+html:not(.dark) .text-indigo-500  { color: #6366f1 !important; }
+html:not(.dark) .text-indigo-600  { color: #4f46e5 !important; }
+html:not(.dark) .text-emerald-400 { color: #10b981 !important; }
+html:not(.dark) .text-amber-400   { color: #f59e0b !important; }
+html:not(.dark) .text-rose-400    { color: #f43f5e !important; }
+html:not(.dark) .text-purple-400  { color: #a855f7 !important; }
+html:not(.dark) .text-blue-400    { color: #3b82f6 !important; }
+html:not(.dark) .text-sky-400     { color: #0ea5e9 !important; }
+html:not(.dark) .text-violet-400  { color: #8b5cf6 !important; }
+html:not(.dark) .text-red-400     { color: #ef4444 !important; }
+html:not(.dark) .text-teal-400    { color: #14b8a6 !important; }
+html:not(.dark) .text-pink-400    { color: #ec4899 !important; }
+html:not(.dark) .text-orange-400  { color: #fb923c !important; }
+
+/* Preserve white text on colored backgrounds */
+html:not(.dark) [class*="bg-indigo-"] .text-white,
+html:not(.dark) [class*="bg-emerald-"] .text-white,
+html:not(.dark) [class*="bg-amber-"] .text-white,
+html:not(.dark) [class*="bg-rose-"] .text-white,
+html:not(.dark) [class*="bg-violet-"] .text-white,
+html:not(.dark) [class*="bg-purple-"] .text-white,
+html:not(.dark) .bg-\[\#5865f2\] .text-white,
+html:not(.dark) .bg-brand .text-white { color: #ffffff !important; }
+
+/* Preserve white text on dark logo/icon backgrounds */
+html:not(.dark) [class*="bg-zinc-800"].text-white,
+html:not(.dark) [class*="bg-zinc-700"].text-white,
+html:not(.dark) [class*="bg-teal-"].text-white,
+html:not(.dark) [class*="bg-blue-"].text-white,
+html:not(.dark) [class*="bg-\[#"].text-white { color: #ffffff !important; }
+
+/* Hover text remapping */
 html:not(.dark) .hover\:text-zinc-100:hover,
 html:not(.dark) .hover\:text-zinc-200:hover,
-html:not(.dark) .hover\:text-zinc-300:hover,
-html:not(.dark) .group:hover .group-hover\:text-white,
-html:not(.dark) .group:hover .group-hover\:text-zinc-100,
-html:not(.dark) .group:hover .group-hover\:text-zinc-200,
-html:not(.dark) .group:hover .group-hover\:text-zinc-300 {
-  color: var(--text-bright) !important;
+html:not(.dark) .hover\:text-zinc-300:hover { color: var(--text-bright)  !important; }
+html:not(.dark) .hover\:text-zinc-200:hover  { color: var(--text-primary) !important; }
+
+/* ─── Colored tinted backgrounds — keep them in light mode ──────── */
+/* These tinted chip/badge backgrounds should remain visible */
+html:not(.dark) .bg-indigo-500\/10  { background-color: rgba(99,102,241,0.08)  !important; }
+html:not(.dark) .bg-indigo-500\/5   { background-color: rgba(99,102,241,0.05)  !important; }
+html:not(.dark) .bg-emerald-500\/10 { background-color: rgba(16,185,129,0.08)  !important; }
+html:not(.dark) .bg-amber-500\/10   { background-color: rgba(245,158,11,0.08)  !important; }
+html:not(.dark) .bg-rose-500\/10    { background-color: rgba(244,63,94,0.08)   !important; }
+html:not(.dark) .bg-purple-500\/10  { background-color: rgba(168,85,247,0.08)  !important; }
+html:not(.dark) .bg-blue-500\/10    { background-color: rgba(59,130,246,0.08)  !important; }
+html:not(.dark) .bg-sky-500\/10     { background-color: rgba(14,165,233,0.08)  !important; }
+html:not(.dark) .bg-violet-500\/10  { background-color: rgba(139,92,246,0.08)  !important; }
+html:not(.dark) .bg-red-500\/10     { background-color: rgba(239,68,68,0.08)   !important; }
+html:not(.dark) .bg-teal-500\/10    { background-color: rgba(20,184,166,0.08)  !important; }
+html:not(.dark) .bg-pink-500\/10    { background-color: rgba(236,72,153,0.08)  !important; }
+html:not(.dark) .bg-amber-500\/5    { background-color: rgba(245,158,11,0.05)  !important; }
+html:not(.dark) .bg-emerald-500\/5  { background-color: rgba(16,185,129,0.05)  !important; }
+html:not(.dark) .bg-red-900\/20     { background-color: rgba(239,68,68,0.08)   !important; }
+
+/* ─── Colored tinted borders — keep in light mode ───────────────── */
+html:not(.dark) .border-indigo-500\/20  { border-color: rgba(99,102,241,0.2)   !important; }
+html:not(.dark) .border-indigo-500\/30  { border-color: rgba(99,102,241,0.25)  !important; }
+html:not(.dark) .border-emerald-500\/20 { border-color: rgba(16,185,129,0.2)   !important; }
+html:not(.dark) .border-amber-500\/20   { border-color: rgba(245,158,11,0.2)   !important; }
+html:not(.dark) .border-rose-500\/20    { border-color: rgba(244,63,94,0.2)    !important; }
+html:not(.dark) .border-purple-500\/20  { border-color: rgba(168,85,247,0.2)   !important; }
+html:not(.dark) .border-blue-500\/20    { border-color: rgba(59,130,246,0.2)   !important; }
+html:not(.dark) .border-red-500\/20     { border-color: rgba(239,68,68,0.2)    !important; }
+html:not(.dark) .border-red-950         { border-color: rgba(239,68,68,0.2)    !important; }
+html:not(.dark) .border-zinc-700\/50    { border-color: rgba(203,213,225,0.5)  !important; }
+
+/* ─── Apply button (brand) ───────────────────────────────────────── */
+.bg-\[\#5865f2\]  { background-color: #6366f1 !important; }
+.hover\:bg-\[\#4752c4\]:hover { background-color: #4f46e5 !important; }
+.active\:bg-\[\#3c45a3\]:active { background-color: #4338ca !important; }
+
+/* ─── Draggable kanban card feel in light mode ───────────────────── */
+html:not(.dark) [draggable="true"]:hover { box-shadow: var(--shadow-md) !important; }
+
+/* ─── Notification panel in light mode ──────────────────────────── */
+html:not(.dark) .bg-\[\#0f121a\]\/30 { background-color: rgba(99,102,241,0.04) !important; }
+
+/* ─── Page entry animation ───────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(22px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes shimmer {
+  from { background-position: -500px 0; }
+  to   { background-position: 500px 0; }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes float {
+  0%,100% { transform: translateY(0px); }
+  50%     { transform: translateY(-5px); }
+}
+@keyframes pulseRing {
+  0%   { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); }
+  70%  { box-shadow: 0 0 0 8px rgba(99,102,241,0); }
+  100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
+}
+
+/* ─── Animation utilities ────────────────────────────────────────── */
+.animate-fade-in-up     { animation: fadeInUp 0.45s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-fade-in        { animation: fadeIn 0.3s ease both; }
+.animate-slide-in-right { animation: slideInRight 0.35s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-scale-in       { animation: scaleIn 0.25s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-slide-down     { animation: slideDown 0.25s ease both; }
+.animate-float          { animation: float 3s ease-in-out infinite; }
+.animate-pulse-ring     { animation: pulseRing 2s ease infinite; }
+
+/* Stagger delays for lists */
+.stagger-1  { animation-delay: 0.05s; }
+.stagger-2  { animation-delay: 0.10s; }
+.stagger-3  { animation-delay: 0.15s; }
+.stagger-4  { animation-delay: 0.20s; }
+.stagger-5  { animation-delay: 0.25s; }
+.stagger-6  { animation-delay: 0.30s; }
+
+/* Shimmer skeleton */
+.skeleton {
+  background: linear-gradient(90deg, var(--muted) 25%, var(--border) 50%, var(--muted) 75%);
+  background-size: 500px 100%;
+  animation: shimmer 1.6s linear infinite;
+  border-radius: 6px;
+}
+
+/* Card hover lift — light mode */
+html:not(.dark) .card-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+html:not(.dark) .card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(99,102,241,0.14), 0 2px 6px rgba(0,0,0,0.06);
+}
+
+/* ─── Colorful gradient stat chips ───────────────────────────────── */
+.chip-indigo  { background: linear-gradient(135deg,#ede9fe,#ddd6fe); color: #6366f1; border: 1px solid rgba(99,102,241,0.2); }
+.chip-emerald { background: linear-gradient(135deg,#d1fae5,#a7f3d0); color: #10b981; border: 1px solid rgba(16,185,129,0.2); }
+.chip-amber   { background: linear-gradient(135deg,#fef3c7,#fde68a); color: #f59e0b; border: 1px solid rgba(245,158,11,0.2); }
+.chip-rose    { background: linear-gradient(135deg,#ffe4e6,#fecdd3); color: #f43f5e; border: 1px solid rgba(244,63,94,0.2); }
+.chip-violet  { background: linear-gradient(135deg,#f5f3ff,#ede9fe); color: #8b5cf6; border: 1px solid rgba(139,92,246,0.2); }
+.chip-sky     { background: linear-gradient(135deg,#e0f2fe,#bae6fd); color: #0ea5e9; border: 1px solid rgba(14,165,233,0.2); }
+.dark .chip-indigo,.dark .chip-emerald,.dark .chip-amber,.dark .chip-rose,.dark .chip-violet,.dark .chip-sky {
+  background: transparent;
+}
+
+/* ─── Colored left-border cards ─────────────────────────────────── */
+.border-l-indigo  { border-left: 3px solid #6366f1 !important; }
+.border-l-emerald { border-left: 3px solid #10b981 !important; }
+.border-l-amber   { border-left: 3px solid #f59e0b !important; }
+.border-l-rose    { border-left: 3px solid #f43f5e !important; }
+.border-l-violet  { border-left: 3px solid #8b5cf6 !important; }
+.border-l-sky     { border-left: 3px solid #0ea5e9 !important; }

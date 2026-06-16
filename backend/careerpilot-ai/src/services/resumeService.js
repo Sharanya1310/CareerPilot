@@ -1,6 +1,7 @@
 import Resume from "../models/Resume.js";
 import AppError from "../utils/AppError.js";
-import { deleteFromCloudinary } from "../config/upload.js";
+import { deleteFromCloudinary, uploadBufferToCloudinary } from "../config/upload.js";
+import { extractText, calculateAtsScore } from "../utils/atsScoring.js";
 
 const formatUploadedDate = (date) => {
   return new Intl.DateTimeFormat("en-US", {
@@ -10,23 +11,6 @@ const formatUploadedDate = (date) => {
   }).format(new Date(date));
 };
 
-const buildInitialAnalysis = () => ({
-  atsScore: 78,
-  atsPercentile: 84,
-  atsSectionScores: {
-    skills: 92,
-    projects: 88,
-    experience: 70,
-    formatting: 85,
-  },
-  jobMatchScore: 0,
-  missingSkills: [],
-  matchSummary: "",
-  aiOptimizedContent: {
-    rewrittenExperience: [],
-    skillsEnhancement: [],
-  },
-});
 
 const buildJobMatchAnalysis = () => ({
   jobMatchScore: 82,
@@ -54,14 +38,19 @@ export const formatResumeItem = (resume) => {
   return {
     id: resume._id,
     title: resume.title,
+    name: resume.title,          // alias for frontend
     fileName: resume.fileName,
     fileUrl: resume.fileUrl,
     fileType: resume.fileType,
     fileSize: resume.fileSize,
+    size: resume.fileSize,       // alias for frontend
     isActive: resume.isActive,
     uploadedAt: resume.createdAt,
     status,
     atsScore: resume.atsScore,
+    score: resume.atsScore,      // alias for frontend
+    atsPercentile: resume.atsPercentile,
+    atsSectionScores: resume.atsSectionScores,
   };
 };
 
@@ -112,30 +101,59 @@ export const getResumeById = async (userId, resumeId) => {
 };
 
 export const createResume = async (userId, file) => {
-  if (!file) {
-    throw new AppError("Resume file is required.", 400);
-  }
+  if (!file) throw new AppError("Resume file is required.", 400);
 
-  const existingCount = await Resume.countDocuments({ user: userId });
+  // Run text extraction and Cloudinary upload in parallel to cut wait time
+  const publicId = `resume_${userId}_${Date.now()}`;
+  const [text, cloudinaryResult, existingCount] = await Promise.all([
+    extractText(file.buffer, file.mimetype),
+    uploadBufferToCloudinary(file.buffer, {
+      folder: "careerpilot-ai/resumes",
+      resource_type: "raw",
+      public_id: publicId,
+    }),
+    Resume.countDocuments({ user: userId }),
+  ]);
+
+  const { atsScore, atsPercentile, atsSectionScores, resumeKeywords } = calculateAtsScore(text);
+
+  // Set as active only if it's the first upload
   const shouldActivate = existingCount === 0;
-
-  if (shouldActivate) {
-    await Resume.updateMany({ user: userId }, { $set: { isActive: false } });
-  }
-
-  const analysis = buildInitialAnalysis();
 
   const resume = await Resume.create({
     user: userId,
     title: file.originalname,
     fileName: file.originalname,
-    fileUrl: file.path,
+    fileUrl: cloudinaryResult.secure_url,
     fileType: file.mimetype,
     fileSize: file.size,
-    cloudinaryPublicId: file.filename || "",
+    cloudinaryPublicId: cloudinaryResult.public_id,
     isActive: shouldActivate,
-    ...analysis,
+    extractedText: text.slice(0, 20000), // cap stored text at 20k chars
+    atsScore,
+    atsPercentile,
+    atsSectionScores,
+    resumeKeywords,
+    jobMatchScore: 0,
+    missingSkills: [],
+    matchSummary: "",
+    aiOptimizedContent: { rewrittenExperience: [], skillsEnhancement: [] },
   });
+
+  // Trigger ATS improvement/analysis notification
+  try {
+    import("./notificationService.js").then(module => {
+      module.default.createNotification(
+        userId,
+        "Resume Uploaded & Analyzed",
+        `Your resume '${resume.title}' was successfully parsed. ATS Score: ${resume.atsScore}%.`,
+        "ats_improvement",
+        resume._id.toString()
+      ).catch(console.error);
+    });
+  } catch (err) {
+    console.error("Failed to trigger resume notification", err);
+  }
 
   return resume;
 };
@@ -167,6 +185,21 @@ export const analyzeResumeForJob = async (userId, jobDescription) => {
   activeResume.matchSummary = analysis.matchSummary;
   activeResume.aiOptimizedContent = analysis.aiOptimizedContent;
   await activeResume.save();
+
+  // Trigger ATS optimization notification
+  try {
+    import("./notificationService.js").then(module => {
+      module.default.createNotification(
+        userId,
+        "Resume ATS Optimization Complete",
+        `Your resume optimization for target role is complete. Job Match compatibility: ${activeResume.jobMatchScore}%.`,
+        "ats_improvement",
+        activeResume._id.toString()
+      ).catch(console.error);
+    });
+  } catch (err) {
+    console.error("Failed to trigger resume notification", err);
+  }
 
   return activeResume;
 };

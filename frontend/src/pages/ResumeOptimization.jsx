@@ -4,16 +4,21 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Progress } from '../components/ui/Progress';
 import { 
-  UploadCloud, FileText, CheckCircle2, AlertTriangle, 
+  UploadCloud, FileText, CheckCircle2,
   Sparkles, Plus, Download, Copy, Trash2, Check
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
+import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 import { api } from '../utils/api';
 
 export default function ResumeOptimization() {
-  const { 
+  const toast = useToast();
+  const confirm = useConfirm();
+  const {
     resumeOptimization, runAnalysis, deleteAnalysis, loadAnalysis,
-    resumes, uploadResume, activateResume, deleteResume, analysisHistory 
+    resumes, uploadResume, activateResume, deleteResume, analysisHistory,
+    atsScore: contextAtsScore
   } = useData();
   
   const [jobDesc, setJobDesc] = useState('');
@@ -21,6 +26,7 @@ export default function ResumeOptimization() {
   const [company, setCompany] = useState('');
   const [selectedResumeId, setSelectedResumeId] = useState('');
   const [activeHistoryId, setActiveHistoryId] = useState(null);
+  const [uploading, setUploading] = useState(false);
   
   const fileInputRef = useRef(null);
 
@@ -42,33 +48,45 @@ export default function ResumeOptimization() {
   const strokeWidth = 6;
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
-  const safeScore = typeof compatibilityScore === 'number' ? compatibilityScore : 0;
+  // Always show the upload-time ATS scan score — never the JD match score
+  const displayScore = contextAtsScore?.score || compatibilityScore || 0;
+  const safeScore = displayScore;
   const strokeDashoffset = circumference - (safeScore / 100) * circumference;
+
+  const scoreColor = displayScore >= 75 ? '#22c55e'   // green
+    : displayScore >= 50 ? '#f59e0b'                  // amber
+    : '#ef4444';                                       // red
+  const scoreTextColor = displayScore >= 75 ? 'text-green-400'
+    : displayScore >= 50 ? 'text-amber-400'
+    : 'text-red-400';
 
   const handleAnalyze = async () => {
     if (!jobDesc.trim()) {
-      alert("Please paste a target job description to match against.");
+      toast({ type: 'warning', title: 'Job description required', message: 'Paste a target job description to match against.' });
       return;
     }
     if (!selectedResumeId) {
-      alert("Please select a resume version first.");
+      toast({ type: 'warning', title: 'No resume selected', message: 'Select a resume version first.' });
       return;
     }
     
     try {
-      const result = await runAnalysis({
-        resumeId: parseInt(selectedResumeId),
+      const payload = {
+        resumeId: selectedResumeId,
         jobDescription: jobDesc,
         jobTitle: jobTitle.trim() || undefined,
         company: company.trim() || undefined
-      });
-      if (result && result.id) {
-        setActiveHistoryId(result.id);
+      };
+      console.log("[Analysis] Sending payload:", payload);
+      const result = await runAnalysis(payload);
+      if (result) {
+        loadAnalysis(result);
+        if (result.id) setActiveHistoryId(result.id);
       }
-      alert("Analysis complete! Resume score updated.");
+      toast({ type: 'success', title: 'Analysis complete!', message: 'Resume score has been updated.' });
     } catch (err) {
       console.error("Analysis failed:", err);
-      alert("Failed to run ATS analysis.");
+      toast({ type: 'error', title: 'Analysis failed', message: err.message });
     }
   };
 
@@ -83,6 +101,27 @@ export default function ResumeOptimization() {
     }
   };
 
+  const handleDownload = async (fileUrl, fileName) => {
+    if (!fileUrl) {
+      toast({ type: 'error', title: 'Download failed', message: 'No file URL available for this resume.' });
+      return;
+    }
+    try {
+      const response = await fetch(fileUrl);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName || 'resume';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open(fileUrl, '_blank');
+    }
+  };
+
   const handleFileClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
@@ -93,15 +132,18 @@ export default function ResumeOptimization() {
     const file = e.target.files[0];
     if (!file) return;
 
+    setUploading(true);
     try {
-      await uploadResume(file);
-      alert(`Resume "${file.name}" uploaded successfully and set as active!`);
+      const uploaded = await uploadResume(file);
+      toast({ type: 'success', title: 'Resume uploaded!', message: `"${file.name}" scanned — ATS score updated.` });
+      if (uploaded?.id) setSelectedResumeId(uploaded.id.toString());
     } catch (err) {
       console.error("Upload failed:", err);
-      alert("Failed to upload resume.");
+      toast({ type: 'error', title: 'Upload failed', message: 'Could not upload resume. Please try again.' });
+    } finally {
+      setUploading(false);
+      e.target.value = null;
     }
-    // reset input
-    e.target.value = null;
   };
 
   return (
@@ -135,13 +177,23 @@ export default function ResumeOptimization() {
           {/* Upload Resume Card */}
           <Card className="bg-[#121214] border border-[#1e222b]">
             <CardContent className="p-1">
-              <div 
-                onClick={handleFileClick}
-                className="border border-dashed border-[#1e222b] rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-zinc-700 transition bg-[#0f1115]/45"
+              <div
+                onClick={!uploading ? handleFileClick : undefined}
+                className={`border border-dashed border-[#1e222b] rounded-xl p-8 flex flex-col items-center justify-center text-center transition bg-[#0f1115]/45 ${uploading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-zinc-700'}`}
               >
-                <UploadCloud className="w-8 h-8 text-indigo-400 mb-3" />
-                <h4 className="text-xs font-bold text-zinc-200">Upload your resume</h4>
-                <p className="text-[10px] text-zinc-500 mt-1">PDF, DOCX up to 5MB</p>
+                {uploading ? (
+                  <>
+                    <svg className="w-8 h-8 animate-spin text-indigo-400 mb-3" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"/></svg>
+                    <h4 className="text-xs font-bold text-zinc-200">Uploading & scanning…</h4>
+                    <p className="text-[10px] text-zinc-500 mt-1">Extracting text and calculating ATS score</p>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="w-8 h-8 text-indigo-400 mb-3" />
+                    <h4 className="text-xs font-bold text-zinc-200">Upload your resume</h4>
+                    <p className="text-[10px] text-zinc-500 mt-1">PDF, DOCX up to 5MB</p>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -211,68 +263,69 @@ export default function ResumeOptimization() {
             </CardContent>
           </Card>
 
-          {/* Job Match Analysis */}
-          <Card className="bg-[#121214] border border-[#1e222b]">
-            <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
-              <div className="flex items-center gap-1.5 text-indigo-400">
-                <CheckCircle2 className="w-4 h-4" />
-                <CardTitle className="text-xs font-bold text-zinc-200">Job Match Analysis</CardTitle>
-              </div>
-              <span className="text-lg font-black text-indigo-400">{jobMatch.matchPercentage}% <span className="text-[10px] font-bold text-zinc-500 uppercase">Match</span></span>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-2 border-t border-[#1e222b]/50">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {/* Missing Skills */}
-                <div className="space-y-2">
-                  <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Missing Skills</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {jobMatch.missingSkills.map((sk) => (
-                      <span key={sk} className="text-[9px] font-bold px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20">
-                        {sk}
-                      </span>
-                    ))}
-                    {jobMatch.missingSkills.length === 0 && (
-                      <span className="text-[9px] text-zinc-550 italic">No missing skills detected</span>
-                    )}
-                  </div>
+          {activeHistoryId === null ? (
+            <Card className="bg-[#121214] border border-[#1e222b] overflow-hidden">
+              <CardContent className="p-8 flex flex-col items-center justify-center text-center space-y-4">
+                <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 animate-pulse">
+                  <Sparkles className="w-6 h-6" />
                 </div>
-                {/* Match Summary */}
-                <div className="md:col-span-2 space-y-2">
-                  <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Match Summary</p>
-                  <p className="text-[11px] text-zinc-450 leading-relaxed font-semibold">
-                    {jobMatch.summary}
+                <div className="space-y-1">
+                  <h3 className="text-xs font-bold text-zinc-200">No Analysis Results Yet</h3>
+                  <p className="text-[10px] text-zinc-500 max-w-sm mx-auto leading-normal">
+                    Select a resume version, enter target details, and paste the job description above. Then click <span className="text-indigo-400 font-semibold">"Analyze Match"</span> to scan for compatibility scores and optimization suggestions.
                   </p>
                 </div>
-              </div>
-
-              {/* Improvement Suggestions */}
-              {resumeOptimization.suggestions && resumeOptimization.suggestions.length > 0 && (
-                <div className="pt-3 border-t border-[#1e222b]/30 space-y-2">
-                  <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Improvement Suggestions</p>
-                  <ul className="space-y-1.5 text-[11px] text-zinc-350 leading-relaxed">
-                    {resumeOptimization.suggestions.map((sug, idx) => (
-                      <li key={idx} className="flex gap-2 items-start font-semibold">
-                        <AlertTriangle className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0 mt-0.5" />
-                        <span>{sug}</span>
-                      </li>
-                    ))}
-                  </ul>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="bg-[#121214] border border-[#1e222b]">
+              <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+                <div className="flex items-center gap-1.5 text-indigo-400">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <CardTitle className="text-xs font-bold text-zinc-200">Job Match Analysis</CardTitle>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                <span className="text-lg font-black text-indigo-400">{jobMatch.matchPercentage}% <span className="text-[10px] font-bold text-zinc-500 uppercase">Match</span></span>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-2 border-t border-[#1e222b]/50">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  {/* Missing Skills */}
+                  <div className="space-y-2">
+                    <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Missing Skills</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {jobMatch.missingSkills.map((sk) => (
+                        <span key={sk} className="text-[9px] font-bold px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20">
+                          {sk}
+                        </span>
+                      ))}
+                      {jobMatch.missingSkills.length === 0 && (
+                        <span className="text-[9px] text-zinc-550 italic">No missing skills detected</span>
+                      )}
+                    </div>
+                  </div>
+                  {/* Match Summary */}
+                  <div className="md:col-span-2 space-y-2">
+                    <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Match Summary</p>
+                    <p className="text-[11px] text-zinc-450 leading-relaxed font-semibold">
+                      {jobMatch.summary}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* AI Optimizer Results */}
+          {(optimizerResults.rewrittenExperience?.length > 0 || optimizerResults.skillsEnhancement?.length > 0) && (
           <Card className="bg-[#121214] border border-[#1e222b]">
             <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
               <div className="flex items-center gap-1.5 text-indigo-400">
                 <Sparkles className="w-4 h-4" />
-                <CardTitle className="text-xs font-bold text-zinc-200">AI Optimizer Results</CardTitle>
+                <CardTitle className="text-xs font-bold text-zinc-200">Optimization Suggestions</CardTitle>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   navigator.clipboard.writeText(optimizerResults.rewrittenExperience.join('\n'));
-                  alert("Copied to clipboard!");
+                  toast({ type: 'success', title: 'Copied!', message: 'Rewritten experience copied to clipboard.' });
                 }}
                 className="text-[10px] font-semibold text-zinc-400 hover:text-white flex items-center gap-1.5 bg-[#1c1f28]/60 border border-[#1e222b]/50 px-2.5 py-1 rounded"
               >
@@ -280,9 +333,9 @@ export default function ResumeOptimization() {
               </button>
             </CardHeader>
             <CardContent className="space-y-4 pt-2 border-t border-[#1e222b]/50">
-              {/* Rewritten Experience */}
+              {optimizerResults.rewrittenExperience?.length > 0 && (
               <div className="space-y-2">
-                <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Rewritten Experience</p>
+                <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Action Items</p>
                 <div className="bg-[#0f1115] border border-[#1e222b] p-3 rounded-lg text-[11px] text-zinc-350 space-y-2.5 font-semibold leading-relaxed">
                   {optimizerResults.rewrittenExperience.map((bullet, idx) => (
                     <div key={idx} className="flex gap-2">
@@ -292,90 +345,97 @@ export default function ResumeOptimization() {
                   ))}
                 </div>
               </div>
-              {/* Skills Enhancement */}
+              )}
+              {optimizerResults.skillsEnhancement?.length > 0 && (
               <div className="space-y-2">
-                <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Skills Enhancement</p>
+                <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Keywords to Add</p>
                 <div className="flex flex-wrap gap-1.5">
                   {optimizerResults.skillsEnhancement.map((sk) => (
-                    <span key={sk} className="text-[9px] font-bold px-2.5 py-1 rounded bg-[#161920] border border-[#232936] text-zinc-400">
-                      {sk}
+                    <span key={sk} className="text-[9px] font-bold px-2.5 py-1 rounded bg-red-500/10 border border-red-500/20 text-red-400">
+                      + {sk}
                     </span>
                   ))}
                 </div>
               </div>
+              )}
             </CardContent>
           </Card>
+          )}
 
         </div>
 
         {/* Right Column (Spans 1/3) */}
         <div className="space-y-6">
 
-          {/* ATS Compatibility Score circular dial */}
-          <Card className="bg-[#121214] border border-[#1e222b]">
-            <CardHeader className="pb-3 border-b border-[#1e222b]/50">
-              <CardTitle className="text-xs font-bold text-zinc-200">ATS Compatibility Score</CardTitle>
-            </CardHeader>
-            <CardContent className="py-6 flex flex-col items-center justify-center space-y-4">
-              <div className="relative flex items-center justify-center">
-                <svg className="w-28 h-28 transform -rotate-90">
-                  <defs>
-                    <linearGradient id="score-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#818cf8" />
-                      <stop offset="100%" stopColor="#c084fc" />
-                    </linearGradient>
-                  </defs>
-                  <circle cx="56" cy="56" r={radius} stroke="#27272a" strokeWidth={strokeWidth} fill="transparent" />
-                  <circle 
-                    cx="56" 
-                    cy="56" 
-                    r={radius} 
-                    stroke="url(#score-grad)" 
-                    strokeWidth={strokeWidth} 
-                    fill="transparent" 
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffset}
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div className="absolute text-center">
-                  <span className="text-2xl font-black text-white">{compatibilityScore}</span>
-                  <span className="text-[9px] text-zinc-500 block">of 100</span>
-                </div>
-              </div>
-              <p className="text-[10px] text-zinc-400 text-center leading-normal max-w-[180px] font-semibold pt-2">
-                Your resume performs better than <span className="text-indigo-400 font-extrabold">{percentile}%</span> of applicants in this category.
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* ATS Section Scores */}
-          <Card className="bg-[#121214] border border-[#1e222b]">
-            <CardHeader className="pb-3 border-b border-[#1e222b]/50">
-              <CardTitle className="text-xs font-bold text-zinc-200">ATS Section Scores</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 py-4">
-              {sectionScores.map((item) => (
-                <div key={item.label} className="space-y-1.5">
-                  <div className="flex justify-between items-center text-[10px] font-semibold text-zinc-400">
-                    <span>{item.label}</span>
-                    <span className="text-zinc-200 font-bold">{item.score}</span>
+          {displayScore > 0 && (
+            <>
+              {/* ATS Compatibility Score circular dial */}
+              <Card className="bg-[#121214] border border-[#1e222b]">
+                <CardHeader className="pb-3 border-b border-[#1e222b]/50">
+                  <CardTitle className="text-xs font-bold text-zinc-200">ATS Compatibility Score</CardTitle>
+                </CardHeader>
+                <CardContent className="py-6 flex flex-col items-center justify-center space-y-4">
+                  <div className="relative flex items-center justify-center">
+                    <svg className="w-28 h-28 transform -rotate-90">
+                      <circle cx="56" cy="56" r={radius} stroke="#27272a" strokeWidth={strokeWidth} fill="transparent" />
+                      <circle
+                        cx="56"
+                        cy="56"
+                        r={radius}
+                        stroke={scoreColor}
+                        strokeWidth={strokeWidth}
+                        fill="transparent"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={strokeDashoffset}
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <div className="absolute z-10 text-center">
+                      <span className={`text-2xl font-black ${scoreTextColor}`}>{Math.round(displayScore)}</span>
+                      <span className="text-[9px] text-zinc-500 block">of 100</span>
+                    </div>
                   </div>
-                  <Progress value={item.score} indicatorColor={item.color} className="h-1 bg-zinc-800" />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+                  <p className="text-[10px] text-zinc-400 text-center leading-normal max-w-[180px] font-semibold pt-2">
+                    Your resume performs better than <span className="text-indigo-400 font-extrabold">{percentile || Math.min(99, Math.round(displayScore * 1.02))}%</span> of applicants in this category.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* ATS Section Scores */}
+              {sectionScores.length > 0 && (
+              <Card className="bg-[#121214] border border-[#1e222b]">
+                <CardHeader className="pb-3 border-b border-[#1e222b]/50">
+                  <CardTitle className="text-xs font-bold text-zinc-200">ATS Section Scores</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 py-4">
+                  {sectionScores.map((item) => (
+                    <div key={item.label} className="space-y-1.5">
+                      <div className="flex justify-between items-center text-[10px] font-semibold text-zinc-400">
+                        <span>{item.label}</span>
+                        <span className="text-zinc-200 font-bold">{item.score}</span>
+                      </div>
+                      <Progress value={item.score} indicatorColor={item.color} className="h-1 bg-zinc-800" />
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+              )}
+            </>
+          )}
 
           {/* My Resumes List */}
           <Card className="bg-[#121214] border border-[#1e222b]">
             <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0 border-b border-[#1e222b]/50">
               <CardTitle className="text-xs font-bold text-zinc-200">My Resumes</CardTitle>
-              <button 
+              <button
                 onClick={handleFileClick}
-                className="text-zinc-450 hover:text-white transition"
+                disabled={uploading}
+                className="text-zinc-450 hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Plus className="w-4 h-4" />
+                {uploading
+                  ? <svg className="w-4 h-4 animate-spin text-indigo-400" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"/></svg>
+                  : <Plus className="w-4 h-4" />
+                }
               </button>
             </CardHeader>
             <CardContent className="py-3 space-y-2">
@@ -389,12 +449,12 @@ export default function ResumeOptimization() {
                   <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-2">
                     <FileText className={`w-4 h-4 flex-shrink-0 ${res.isActive ? 'text-indigo-400' : 'text-zinc-500'}`} />
                     <div className="min-w-0 flex-1">
-                      {/* Click name to view inline */}
-                      <a 
-                        href={api.getViewUrl(res.id)} 
-                        target="_blank" 
+                      <a
+                        href={`https://docs.google.com/viewer?url=${encodeURIComponent(res.fileUrl)}`}
+                        target="_blank"
                         rel="noreferrer"
                         className="text-[10px] font-bold text-zinc-200 hover:text-indigo-400 hover:underline block truncate"
+                        title="Click to view resume"
                       >
                         {res.name}
                       </a>
@@ -425,21 +485,23 @@ export default function ResumeOptimization() {
                     </span>
                     
                     {/* Download */}
-                    <a 
-                      href={api.getDownloadUrl(res.id)} 
-                      target="_self"
+                    <button
+                      onClick={() => handleDownload(res.fileUrl, res.name)}
                       className="p-1 hover:bg-[#1b1f28] rounded text-zinc-500 hover:text-zinc-300 transition"
                       title="Download"
                     >
                       <Download className="w-3.5 h-3.5" />
-                    </a>
+                    </button>
 
                     {/* Delete */}
                     <button 
                       onClick={() => {
-                        if (confirm(`Are you sure you want to delete "${res.name}"?`)) {
-                          deleteResume(res.id);
-                        }
+                        confirm({
+                          title: `Delete "${res.name}"?`,
+                          message: 'This resume will be permanently deleted.',
+                          confirmLabel: 'Delete',
+                          onConfirm: () => deleteResume(res.id),
+                        });
                       }}
                       className="p-1 hover:bg-[#1b1f28] rounded text-zinc-500 hover:text-red-400 transition"
                       title="Delete"

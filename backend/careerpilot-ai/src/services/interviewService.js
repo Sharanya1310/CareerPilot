@@ -15,10 +15,27 @@ class InterviewService {
   }
 
   static async scheduleInterview(userId, interviewData) {
-    return Interview.create({
+    const interview = await Interview.create({
       ...interviewData,
       user: userId,
     });
+
+    // Trigger upcoming interview notification asynchronously
+    try {
+      import("./notificationService.js").then(module => {
+        module.default.createNotification(
+          userId,
+          `Upcoming Interview: ${interview.company}`,
+          `Your interview for ${interview.role} at ${interview.company} is scheduled for ${interview.date} at ${interview.time}.`,
+          "upcoming_interview",
+          interview._id.toString()
+        ).catch(console.error);
+      });
+    } catch (err) {
+      console.error("Failed to trigger interview notification", err);
+    }
+
+    return interview;
   }
 
   static async deleteInterview(userId, interviewId) {

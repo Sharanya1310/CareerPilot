@@ -16,18 +16,65 @@ class ApplicationService {
 
   static async createApplication(userId, appData) {
     const timeline = appData.timeline || `Applied on ${new Date().toLocaleDateString()}`;
-    return Application.create({
+    const app = await Application.create({
       ...appData,
       user: userId,
       timeline,
     });
+
+    // Send application created notification
+    try {
+      import("./notificationService.js").then(module => {
+        module.default.createNotification(
+          userId,
+          `Application Tracked: ${app.company}`,
+          `Successfully added your ${app.role} application at ${app.company} under tracking.`,
+          "application_followup",
+          app._id.toString()
+        ).catch(console.error);
+      });
+    } catch (err) {
+      console.error("Failed to trigger application notification", err);
+    }
+
+    return app;
   }
 
   static async updateApplicationStage(userId, appId, stage) {
     const app = await this.getApplicationById(userId, appId);
+    const oldStage = app.stage;
     app.stage = stage;
     app.timeline = `${app.timeline || ""}\nStage updated to ${stage} on ${new Date().toLocaleDateString()}`;
     await app.save();
+
+    // Trigger stage change notifications
+    try {
+      import("./notificationService.js").then(module => {
+        let title = `Stage Updated: ${app.company}`;
+        let message = `Your application for ${app.role} at ${app.company} is now in the '${stage}' stage.`;
+        let type = "application_followup";
+
+        if (stage === "Interview") {
+          title = `Interview Stage Reached at ${app.company}!`;
+          message = `Excellent news! Your application for ${app.role} at ${app.company} has progressed to the Interview stage. Let's start preparing!`;
+          type = "upcoming_interview";
+        } else if (stage === "OA" || stage === "Assessment") {
+          title = `Assessment Pending: ${app.company}`;
+          message = `Your application for ${app.role} at ${app.company} requires an assessment/OA. Check your inbox for details.`;
+        }
+
+        module.default.createNotification(
+          userId,
+          title,
+          message,
+          type,
+          app._id.toString()
+        ).catch(console.error);
+      });
+    } catch (err) {
+      console.error("Failed to trigger application stage notification", err);
+    }
+
     return app;
   }
 

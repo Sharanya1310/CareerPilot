@@ -14,11 +14,7 @@ import {
 
 export const getResumes = asyncHandler(async (req, res) => {
   const resumes = await getUserResumes(req.user._id);
-
-  return ApiResponse.ok(res, "Resumes fetched successfully.", {
-    count: resumes.length,
-    resumes: resumes.map(formatResumeItem),
-  });
+  return res.json(resumes.map(formatResumeItem));
 });
 
 export const getOptimizationDashboard = asyncHandler(async (req, res) => {
@@ -34,8 +30,7 @@ export const getOptimizationDashboard = asyncHandler(async (req, res) => {
 
 export const uploadResume = asyncHandler(async (req, res) => {
   const resume = await createResume(req.user._id, req.file);
-
-  return ApiResponse.created(res, "Resume uploaded successfully.", formatResumeItem(resume));
+  return res.status(201).json(formatResumeItem(resume));
 });
 
 export const analyzeJobMatch = asyncHandler(async (req, res) => {
@@ -53,19 +48,13 @@ export const analyzeJobMatch = asyncHandler(async (req, res) => {
 
 export const activateResume = asyncHandler(async (req, res) => {
   const resume = await setActiveResume(req.user._id, req.params.id);
-
-  return ApiResponse.ok(res, "Resume set as active.", formatResumeItem(resume));
+  return res.json(formatResumeItem(resume));
 });
 
 export const downloadResume = asyncHandler(async (req, res) => {
   const resume = await getResumeById(req.user._id, req.params.id);
-
-  return ApiResponse.ok(res, "Resume download URL retrieved.", {
-    id: resume._id,
-    fileName: resume.fileName,
-    fileUrl: resume.fileUrl,
-    fileType: resume.fileType,
-  });
+  if (!resume.fileUrl) throw new AppError("Resume file not available.", 404);
+  return res.redirect(resume.fileUrl);
 });
 
 export const removeResume = asyncHandler(async (req, res) => {

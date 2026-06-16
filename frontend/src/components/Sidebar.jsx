@@ -1,63 +1,102 @@
-import { 
-  LayoutDashboard, FileText, Compass, Briefcase, 
-  Building2, CalendarDays, User, Moon, Sun 
+import {
+  LayoutDashboard, FileText, Compass, Briefcase,
+  CalendarDays, User, Moon, Sun
 } from 'lucide-react';
 
-export default function Sidebar({ currentPage = 'Resume Optimization', onPageChange, theme = 'dark', onThemeToggle }) {
-  const navItems = [
-    { name: 'Dashboard', icon: LayoutDashboard },
-    { name: 'Resume Optimization', icon: FileText },
-    { name: 'Job Discovery', icon: Compass },
-    { name: 'Application Tracker', icon: Briefcase },
-    { name: 'Company Tracker', icon: Building2 },
-    { name: 'Interview Hub', icon: CalendarDays },
-    { name: 'Profile', icon: User },
-  ];
+const NAV_ITEMS = [
+  { name: 'Dashboard',            icon: LayoutDashboard, color: 'text-indigo-500' },
+  { name: 'Resume Optimization',  icon: FileText,         color: 'text-violet-500' },
+  { name: 'Job Discovery',        icon: Compass,          color: 'text-sky-500' },
+  { name: 'Application Tracker',  icon: Briefcase,        color: 'text-emerald-500' },
+  { name: 'Interview Hub',        icon: CalendarDays,     color: 'text-rose-500' },
+  { name: 'Profile',              icon: User,             color: 'text-purple-500' },
+];
 
-  const ThemeIcon = theme === 'dark' ? Moon : Sun;
+export default function Sidebar({ currentPage = 'Dashboard', onPageChange, theme = 'light', onThemeToggle }) {
+  const isDark = theme === 'dark';
 
   return (
-    <aside className="w-16 hover:w-56 bg-[#0f1115] border-r border-[#1e222b] flex flex-col h-screen fixed left-0 top-0 z-50 select-none transition-all duration-300 ease-in-out group/sidebar shadow-md hover:shadow-2xl overflow-hidden">
-      {/* Brand Header */}
-      <div className="pt-5 pb-4 px-6 flex flex-col justify-center overflow-hidden whitespace-nowrap">
-        <h1 className="text-sm font-black tracking-tight text-indigo-600 dark:text-white flex items-center justify-center group-hover/sidebar:justify-start gap-0 group-hover/sidebar:gap-2">
-          <svg className="w-7 h-7 flex-shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#7c4dff" />
-                <stop offset="100%" stopColor="#64b5f6" />
-              </linearGradient>
-            </defs>
-            <path 
-              d="M17 7.5A7.5 7.5 0 1 0 17 16.5M12 7.5V17.5M12 7.5H16A3 3 0 0 1 19 10.5A3 3 0 0 1 16 13.5H12" 
-              stroke="url(#logo-grad)" 
-              strokeWidth="2.5" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-            />
-          </svg>
-          <span className="w-0 opacity-0 group-hover/sidebar:w-auto group-hover/sidebar:opacity-100 transition-all duration-300 font-black">areerPilot AI</span>
-        </h1>
-        <p className="text-[9px] text-zinc-500 font-extrabold mt-1 pl-1 w-0 opacity-0 group-hover/sidebar:w-auto group-hover/sidebar:opacity-100 transition-all duration-300">
-          Pro Edition
-        </p>
+    <aside className={`
+      w-16 hover:w-56 flex flex-col h-screen fixed left-0 top-0 z-50 select-none
+      transition-all duration-300 ease-in-out group/sidebar overflow-hidden
+      ${isDark
+        ? 'bg-[#0d0d0f] border-r border-[#1e222b] shadow-xl shadow-black/30'
+        : 'bg-white border-r border-slate-100 shadow-[2px_0_20px_rgba(99,102,241,0.06)]'
+      }
+    `}>
+
+      {/* Brand Logo */}
+      <div
+        onClick={() => onPageChange?.('Landing')}
+        className="pt-5 pb-4 px-4 flex flex-col justify-center overflow-hidden whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity"
+      >
+        <div className="flex items-center justify-center group-hover/sidebar:justify-start gap-0 group-hover/sidebar:gap-2.5">
+          {/* Gradient icon mark */}
+          <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 animate-float">
+            <svg className="w-6.5 h-6.5 text-[#4c1dff]" viewBox="0 0 24 24" fill="none">
+              <defs>
+                <mask id="sidebarLogoMask">
+                  <rect x="0" y="0" width="24" height="24" fill="white" />
+                  <rect x="6" y="6" width="12" height="12" fill="black" />
+                  <line x1="0" y1="0" x2="8" y2="8" stroke="black" strokeWidth="2.5" strokeLinecap="square" />
+                  <line x1="16" y1="16" x2="24" y2="24" stroke="black" strokeWidth="2.5" strokeLinecap="square" />
+                </mask>
+              </defs>
+              <rect x="0" y="0" width="24" height="24" fill="currentColor" mask="url(#sidebarLogoMask)" />
+            </svg>
+          </div>
+          <div className="w-0 opacity-0 group-hover/sidebar:w-auto group-hover/sidebar:opacity-100 transition-all duration-300 overflow-hidden">
+            <p className="text-sm font-bold text-[#4c1dff] whitespace-nowrap"
+              style={{ fontFamily: "'Comfortaa', 'Plus Jakarta Sans', sans-serif" }}>
+              CareerPilot AI
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Navigation Links */}
-      <nav className="flex-1 py-3 space-y-[6px]">
-        {navItems.map((item) => {
+      {/* Divider */}
+      <div className={`mx-3 h-px mb-2 ${isDark ? 'bg-zinc-800' : 'bg-slate-100'}`} />
+
+      {/* Navigation */}
+      <nav className="flex-1 py-2 space-y-0.5 px-2">
+        {NAV_ITEMS.map((item, idx) => {
           const isActive = currentPage === item.name;
           return (
             <button
               key={item.name}
-              onClick={() => onPageChange && onPageChange(item.name)}
-              className={`w-full flex items-center justify-center group-hover/sidebar:justify-start gap-0 group-hover/sidebar:gap-3.5 px-6 py-2.5 rounded-r-lg text-[11px] font-semibold transition-all ${
-                isActive 
-                  ? 'bg-indigo-50/80 dark:bg-[#1b1f29] text-indigo-600 dark:text-white border-l-2 border-indigo-500' 
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-[#13161c]'
-              }`}
+              onClick={() => onPageChange?.(item.name)}
+              style={{ animationDelay: `${idx * 40}ms` }}
+              className={`
+                animate-fade-in-up w-full flex items-center justify-center group-hover/sidebar:justify-start
+                gap-0 group-hover/sidebar:gap-3 px-3 py-2.5 rounded-xl text-[11px] font-semibold
+                transition-all duration-200 group/nav-item relative overflow-hidden
+                ${isActive
+                  ? isDark
+                    ? 'bg-indigo-500/10 text-indigo-400 shadow-sm'
+                    : 'bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-600 shadow-sm shadow-indigo-100'
+                  : isDark
+                    ? 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
+                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                }
+              `}
             >
-              <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-indigo-500 dark:text-indigo-400' : 'text-zinc-400 dark:text-zinc-500'}`} />
+              {/* Active left indicator bar */}
+              {isActive && (
+                <span className={`
+                  absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full
+                  ${isDark ? 'bg-indigo-400' : 'bg-indigo-500'}
+                `} />
+              )}
+
+              <item.icon className={`
+                w-4 h-4 flex-shrink-0 transition-transform duration-200
+                group-hover/nav-item:scale-110
+                ${isActive
+                  ? isDark ? 'text-indigo-400' : item.color
+                  : isDark ? 'text-zinc-500' : 'text-slate-400 group-hover/nav-item:' + item.color
+                }
+              `} />
+
               <span className="w-0 opacity-0 group-hover/sidebar:w-auto group-hover/sidebar:opacity-100 transition-all duration-300 whitespace-nowrap overflow-hidden">
                 {item.name}
               </span>
@@ -66,15 +105,29 @@ export default function Sidebar({ currentPage = 'Resume Optimization', onPageCha
         })}
       </nav>
 
-      {/* Bottom section with Theme toggler */}
-      <div className="border-t border-[#1e222b] overflow-hidden whitespace-nowrap">
+      {/* Divider */}
+      <div className={`mx-3 h-px ${isDark ? 'bg-zinc-800' : 'bg-slate-100'}`} />
+
+      {/* Theme Toggle */}
+      <div className="p-2">
         <button
           onClick={onThemeToggle}
-          className="w-full flex items-center justify-center group-hover/sidebar:justify-start gap-0 group-hover/sidebar:gap-3.5 px-6 py-4 rounded-r-lg text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-[#13161c] transition-all"
+          className={`
+            w-full flex items-center justify-center group-hover/sidebar:justify-start
+            gap-0 group-hover/sidebar:gap-3 px-3 py-2.5 rounded-xl text-[11px] font-semibold
+            transition-all duration-200
+            ${isDark
+              ? 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
+              : 'text-slate-400 hover:text-slate-700 hover:bg-slate-50'
+            }
+          `}
         >
-          <ThemeIcon className="w-4 h-4 text-zinc-400 dark:text-zinc-500 flex-shrink-0" />
+          {isDark
+            ? <Moon className="w-4 h-4 flex-shrink-0 text-indigo-400" />
+            : <Sun className="w-4 h-4 flex-shrink-0 text-amber-400" />
+          }
           <span className="w-0 opacity-0 group-hover/sidebar:w-auto group-hover/sidebar:opacity-100 transition-all duration-300 whitespace-nowrap overflow-hidden">
-            {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+            {isDark ? 'Dark Mode' : 'Light Mode'}
           </span>
         </button>
       </div>
@@ -82,5 +135,3 @@ export default function Sidebar({ currentPage = 'Resume Optimization', onPageCha
     </aside>
   );
 }
-
-

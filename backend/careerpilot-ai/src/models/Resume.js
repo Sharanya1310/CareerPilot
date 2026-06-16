@@ -61,6 +61,12 @@ const resumeSchema = new mongoose.Schema(
       default: "",
     },
 
+    extractedText: {
+      type: String,
+      default: "",
+      select: false,
+    },
+
     isActive: {
       type: Boolean,
       default: false,
@@ -106,6 +112,11 @@ const resumeSchema = new mongoose.Schema(
     aiOptimizedContent: {
       type: aiOptimizedContentSchema,
       default: () => ({}),
+    },
+
+    resumeKeywords: {
+      type: [String],
+      default: [],
     },
   },
   {

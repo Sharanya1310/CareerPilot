@@ -1,14 +1,37 @@
-import React from 'react';
+import { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Progress } from '../../../components/ui/Progress';
 import { useData } from '../../../context/DataContext';
-import { monthlyChartData } from '../../../mock/dashboardData';
+
+const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 export default function AnalyticsSection() {
-  const { stats } = useData();
+  const { stats, applications } = useData();
   const activeStatus = stats.activeStatus || { applied: 0, oa: 0, interview: 0, offer: 0 };
   const total = Math.max(stats.totalApplications?.count || 0, 1);
+
+  /* Build last-6-months chart from real application data */
+  const monthlyChartData = useMemo(() => {
+    const now = new Date();
+    return Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+      const yr = d.getFullYear();
+      const mo = d.getMonth();
+      const apps = applications.filter(a => {
+        const date = new Date(a.createdAt || a.date);
+        return date.getFullYear() === yr && date.getMonth() === mo;
+      });
+      const interviews = apps.filter(a =>
+        a.stage === 'Interview' || a.stage === 'interview'
+      ).length;
+      return {
+        name: MONTH_LABELS[mo],
+        applications: apps.length,
+        interviews,
+      };
+    });
+  }, [applications]);
 
   const applicationStatusData = [
     { label: "Applied", count: activeStatus.applied, total, color: "bg-indigo-500" },
@@ -65,14 +88,23 @@ export default function AnalyticsSection() {
                   labelStyle={{ color: 'var(--muted-foreground)', fontSize: '11px' }}
                   itemStyle={{ color: 'var(--foreground)', fontSize: '12px' }}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="applications" 
-                  stroke="#6366f1" 
+                <Line
+                  type="monotone"
+                  dataKey="applications"
+                  stroke="#6366f1"
                   strokeWidth={2.5}
                   dot={{ fill: '#6366f1', strokeWidth: 1, r: 3 }}
                   activeDot={{ r: 5, strokeWidth: 0 }}
                   name="Applications"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="interviews"
+                  stroke="#f59e0b"
+                  strokeWidth={2}
+                  dot={{ fill: '#f59e0b', strokeWidth: 1, r: 3 }}
+                  activeDot={{ r: 5, strokeWidth: 0 }}
+                  name="Interviews"
                 />
               </LineChart>
             </ResponsiveContainer>

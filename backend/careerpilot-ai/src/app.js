@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
+import passport from "./config/passport.js";
 
 // Routes
 import healthRoutes from "./routes/healthRoutes.js";
@@ -11,6 +12,10 @@ import applicationRoutes from "./routes/applicationRoutes.js";
 import interviewRoutes from "./routes/interviewRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import jobRoutes from "./routes/jobRoutes.js";
+import experienceRoutes from "./routes/experienceRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import analysisRoutes from "./routes/analysisRoutes.js";
+import companyRoutes from "./routes/companyRoutes.js";
 
 // Middleware
 import requestIdMiddleware from "./middleware/requestId.js";
@@ -29,6 +34,9 @@ app.use(
     credentials: true,
   })
 );
+
+// ─── Passport (OAuth) ────────────────────────────────────────
+app.use(passport.initialize());
 
 // ─── Security Headers ────────────────────────────────────────
 app.use(securityHeadersMiddleware);
@@ -54,6 +62,10 @@ app.use("/api/applications", applicationRoutes);
 app.use("/api/interviews", interviewRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/jobs", jobRoutes);
+app.use("/api/experiences", experienceRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/analysis", analysisRoutes);
+app.use("/api/companies", companyRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────
 app.use(notFound);

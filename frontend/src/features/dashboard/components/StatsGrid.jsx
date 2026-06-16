@@ -37,7 +37,10 @@ export default function StatsGrid() {
             </div>
           </div>
           <div className="mt-4">
-            <span className="text-2xl font-bold tracking-tight text-zinc-850 dark:text-white">18 <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Applied / OA / Interview</span></span>
+            <span className="text-2xl font-bold tracking-tight text-zinc-850 dark:text-white">
+              {(activeStatus?.applied || 0) + (activeStatus?.oa || 0) + (activeStatus?.interview || 0)}{" "}
+              <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Applied / OA / Interview</span>
+            </span>
           </div>
           <div className="flex gap-3 mt-1.5 text-[9px] text-zinc-500 dark:text-zinc-450 font-semibold uppercase">
             <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-650" /> {activeStatus.applied} Applied</span>

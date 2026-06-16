@@ -1,185 +1,133 @@
-// Mock data for CareerPilot AI Dashboard (exactly matching mockup design)
+// Mock data for CareerPilot AI Dashboard cleared of mock items
 export const statsData = {
   totalApplications: {
-    count: 42,
-    growth: "+12%",
+    count: 0,
+    growth: "+0%",
     timeline: "this month"
   },
   activeStatus: {
-    applied: 42,
-    oa: 26,
-    interview: 15,
-    offer: 5
+    applied: 0,
+    oa: 0,
+    interview: 0,
+    offer: 0
   },
   offersReceived: {
-    count: "02",
+    count: "00",
     target: 5,
-    percentage: 40,
-    status: "1 negotiation in progress"
+    percentage: 0,
+    status: "0 offer(s) received"
   }
 };
 
-export const monthlyChartData = [
-  { name: "JUL", applications: 12 },
-  { name: "AUG", applications: 28 },
-  { name: "SEP", applications: 35 },
-  { name: "OCT", applications: 42 },
-];
+export const monthlyChartData = [];
 
 export const applicationStatusData = [
-  { label: "Applied", count: 42, total: 42, color: "bg-indigo-500" },
-  { label: "OA", count: 26, total: 42, color: "bg-[#2e3545]" },
-  { label: "Interview", count: 15, total: 42, color: "bg-[#3f2f6a]" },
-  { label: "Offer", count: 5, total: 42, color: "bg-emerald-500" },
+  { label: "Applied", count: 0, total: 0, color: "bg-indigo-500" },
+  { label: "OA", count: 0, total: 0, color: "bg-[#2e3545]" },
+  { label: "Interview", count: 0, total: 0, color: "bg-[#3f2f6a]" },
+  { label: "Offer", count: 0, total: 0, color: "bg-emerald-500" },
 ];
 
 export const atsData = {
-  score: 84,
-  trend: "+8 points since last update"
+  score: 0,
+  trend: "No data"
 };
 
-export const missingSkills = [
-  "Docker",
-  "AWS (Lambda/S3)",
-  "Redix"
-];
+export const missingSkills = [];
 
-export const recommendedJobs = [
-  { 
-    id: 101, 
-    title: "Full Stack Engineer", 
-    company: "Stripe", 
-    location: "Remote", 
-    salary: "$180k - $240k", 
-    match: 91, 
-    tags: ["React", "Node.js", "Go"] 
-  },
-  { 
-    id: 102, 
-    title: "Backend Developer (Python)", 
-    company: "Airbnb", 
-    location: "San Francisco", 
-    salary: "Hybrid", 
-    match: 85, 
-    tags: ["Python", "Django", "PostgreSQL"] 
-  },
-];
-
-export const recentApplications = [
-  { 
-    id: 1, 
-    company: "Accenture", 
-    role: "Advanced Systems Engineer", 
-    status: "Interview", 
-    color: "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20", 
-    date: "Oct 25" 
-  },
-  { 
-    id: 2, 
-    company: "Infosys", 
-    role: "System Engineer", 
-    status: "Applied", 
-    color: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20", 
-    date: "Oct 24" 
-  },
-];
-
-export const trackedCompanies = [
-  { name: "Google", domain: "google.com", openings: 2 },
-  { name: "Microsoft", domain: "microsoft.com", openings: 1 },
-  { name: "Amazon", domain: "amazon.com", openings: 0 },
-];
-
-export const upcomingInterviews = [
-  { id: 1, company: "Google", role: "L3 Backend", date: "Oct 27", time: "2:00 PM" },
-  { id: 2, company: "Meta", role: "System Design", date: "Oct 29", time: "10:00 AM" },
-];
+export const recommendedJobs = [];
+export const recentApplications = [];
+export const trackedCompanies = [];
+export const upcomingInterviews = [];
 
 // Specific mock data for Resume Optimization page
 export const resumeOptimizationData = {
-  compatibilityScore: 78,
-  percentile: 84,
+  compatibilityScore: 0,
+  percentile: 0,
   sectionScores: [
-    { label: "Skills", score: 92, color: "bg-indigo-500" },
-    { label: "Projects", score: 88, color: "bg-indigo-500" },
-    { label: "Experience", score: 70, color: "bg-amber-500" },
-    { label: "Formatting", score: 85, color: "bg-indigo-500" },
+    { label: "Skills", score: 0, color: "bg-indigo-500" },
+    { label: "Projects", score: 0, color: "bg-indigo-500" },
+    { label: "Experience", score: 0, color: "bg-amber-500" },
+    { label: "Formatting", score: 0, color: "bg-indigo-500" },
   ],
-  myResumes: [
-    { name: "Senior_Dev_V2.pdf", status: "Active • Oct 24", score: 78 },
-    { name: "Senior_Dev_V1.pdf", status: "Oct 12, 2026", score: 64 },
-  ],
+  myResumes: [],
   jobMatch: {
-    matchPercentage: 82,
-    missingSkills: ["Cloud Security", "Terraform", "GraphQL"],
-    summary: "High match for Senior roles, but missing specific Cloud Security focus and Infrastructure as Code experience required for this position."
+    matchPercentage: 0,
+    missingSkills: [],
+    summary: ""
   },
   optimizerResults: {
-    rewrittenExperience: [
-      "Spearheaded the development of a React-based micro-frontend architecture, resulting in a 35% improvement in build times and enhanced scalability.",
-      "Optimized CI/CD pipelines using GitHub Actions, reducing deployment latency by 22% and ensuring 99.9% uptime."
-    ],
-    skillsEnhancement: [
-      "Microservices Architecture",
-      "System Design",
-      "Kubernetes",
-      "Cloud Native"
-    ]
+    rewrittenExperience: [],
+    skillsEnhancement: []
   }
 };
 
-// Specific mock data for Job Discovery page
-export const jobDiscoveryData = {
-  totalJobs: 1247,
-  profileCompletion: "Complete",
-  topMatches: [
-    { id: 201, title: "Staff Software Engineer", company: "Google", location: "Mountain View", match: 94, logo: "bg-white text-zinc-900" },
-    { id: 202, title: "Senior React Developer", company: "Microsoft", location: "Remote", match: 88, logo: "bg-blue-600 text-white" }
-  ],
-  premiumListings: [
-    {
-      id: 301,
-      title: "Senior Full Stack Developer",
-      company: "Google",
-      team: "Cloud Platform Team",
-      logo: "bg-white text-zinc-900",
-      location: "Mountain View, CA (Hybrid)",
-      experience: "5+ Years Exp",
-      salary: "$160k - $210k",
-      posted: "15h ago",
-      match: 91,
-      jobType: "Full Time",
-      description: "Google Cloud Platform is seeking a Senior Full Stack Developer to build and maintain the next generation of developer productivity tools. You will work across the stack using React, Node.js, and Google's internal distributed systems...",
-      missingSkills: ["Rust", "gRPC"],
-      requirements: [
-        "Expert proficiency in TypeScript and React",
-        "Experience with high-performance Node.js backends",
-        "Understanding of distributed system architectures"
-      ]
-    },
-    {
-      id: 302,
-      title: "Software Engineer II (React/Node)",
-      company: "Microsoft",
-      team: "Xbox Design Team",
-      logo: "bg-blue-600 text-white",
-      location: "Redmond, WA (Remote)",
-      experience: "3-5 Years Exp",
-      salary: "$140k - $180k",
-      posted: "1d ago",
-      match: 88,
-      jobType: "Full Time",
-      description: "Microsoft's Xbox Design Team is looking for a Software Engineer II to build next-generation web platforms. You will design, develop, and test web components using React, Node.js, and Azure services...",
-      missingSkills: ["Docker", "GraphQL"],
-      requirements: [
-        "Strong experience with React and TypeScript",
-        "Proficiency in Node.js backend development",
-        "Experience with Azure cloud databases and APIs"
-      ]
-    }
-  ],
-  savedRoles: [
-    { name: "Cloud Architect", company: "Amazon Web Services", logo: "A", logoBg: "bg-amber-600 text-white" },
-    { name: "iOS Developer", company: "Apple", logo: "Ap", logoBg: "bg-white text-zinc-900" }
-  ]
-};
+export const jobDiscoveryData = { topMatches: [], premiumListings: [], savedRoles: [] };
+
+export const mockTrendingCompanies = [
+  { name: "Google", count: 18, bg: "bg-[#ea4335]/15 text-[#ea4335]", dotColor: "bg-[#ea4335]", logo: "G" },
+  { name: "Amazon", count: 14, bg: "bg-[#ff9900]/15 text-[#ff9900]", dotColor: "bg-[#ff9900]", logo: "A" },
+  { name: "Microsoft", count: 12, bg: "bg-[#00a4ef]/15 text-[#00a4ef]", dotColor: "bg-[#00a4ef]", logo: "M" },
+  { name: "Stripe", count: 9, bg: "bg-[#635bff]/15 text-[#635bff]", dotColor: "bg-[#635bff]", logo: "S" },
+  { name: "Meta", count: 11, bg: "bg-[#0668e1]/15 text-[#0668e1]", dotColor: "bg-[#0668e1]", logo: "M" }
+];
+
+export const mockExperiences = [
+  {
+    id: "exp-1",
+    company: "Google",
+    role: "Software Engineer Intern",
+    outcome: "Selected",
+    difficulty: "Hard",
+    tags: ["#Algorithms", "#DataStructures", "#Internship"],
+    description: "The interview process was very structured. There were 2 technical phone screens focusing on trees and dynamic programming.",
+    rounds: [
+      { title: "Round 1: Technical Screening", focus: "Binary trees traversal and tree coloring algorithms." },
+      { title: "Round 2: Technical Deep Dive", focus: "Dynamic programming optimization on a grid path finding problem." }
+    ],
+    prepTips: [
+      "Review dynamic programming thoroughly on LeetCode",
+      "Focus on explaining your thought process out loud",
+      "Practise write-ups with time complexity analysis"
+    ]
+  },
+  {
+    id: "exp-2",
+    company: "Amazon",
+    role: "Front-End Engineer (FEE)",
+    outcome: "Selected",
+    difficulty: "Medium",
+    tags: ["#React", "#JavaScript", "#SystemDesign"],
+    description: "A 4-round loop consisting of 1 CSS/HTML deep dive, 2 coding rounds in JavaScript/React, and 1 frontend system design round.",
+    rounds: [
+      { title: "Round 1: JavaScript Coding", focus: "Implement custom array functions and bounce/throttle behavior." },
+      { title: "Round 2: React Framework", focus: "Build a highly responsive search dropdown component on-the-fly." },
+      { title: "Round 3: Frontend System Design", focus: "Architect a large scale real-time chat application layout." },
+      { title: "Round 4: Leadership Principles", focus: "Deep dive behavioral questions based on Amazon's 16 Leadership Principles." }
+    ],
+    prepTips: [
+      "Deeply understand JavaScript event loop and closures",
+      "Prepare STAR-format stories for Amazon's 16 Leadership Principles",
+      "Practise clean React component design under time constraints"
+    ]
+  },
+  {
+    id: "exp-3",
+    company: "Microsoft",
+    role: "Cloud Support Engineer",
+    outcome: "Selected",
+    difficulty: "Medium",
+    tags: ["#Azure", "#Networking", "#Troubleshooting"],
+    description: "Technical assessments focused on operating systems, networking fundamentals (TCP/IP, DNS), and Azure cloud services.",
+    rounds: [
+      { title: "Round 1: Troubleshooting Scenario", focus: "Diagnose a connection failure between a VM and an SQL Database in Azure." },
+      { title: "Round 2: Networking & OS Foundations", focus: "Deep dive on HTTP codes, DNS resolution steps, and Linux permissions." }
+    ],
+    prepTips: [
+      "Understand cloud security groups and subnets",
+      "Be confident in command-line network debugging tools",
+      "Practise active listening during customer-scenario roleplay"
+    ]
+  }
+];
+

@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
+      "Read(//c//**)",
+      "PowerShell($env:PATH -split ';' | ForEach-Object { if \\(Test-Path \"$_\\\\node.exe\" -ErrorAction SilentlyContinue\\) { \"$_ has node.exe\" } })",
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "PowerShell(curl -s -o $null -w \"%{http_code}\" http://localhost:5000/api/health 2>$null)",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:5000/api/health\" -UseBasicParsing -TimeoutSec 3; Write-Host \"Status: $\\($r.StatusCode\\)\" } catch { Write-Host \"Backend not reachable: $_\" })",
+      "PowerShell(cd C:\\\\Users\\\\Dad\\\\Desktop\\\\CareerPilotAI\\\\backend\\\\careerpilot-ai; Start-Process powershell -ArgumentList \"-NoExit\",\"-Command\",\"npm run dev\" -WindowStyle Normal)",
+      "PowerShell(cd C:\\\\Users\\\\Dad\\\\Desktop\\\\CareerPilotAI\\\\frontend; Start-Process powershell -ArgumentList \"-NoExit\",\"-Command\",\"npm install; npm run dev\" -WindowStyle Normal)",
+      "PowerShell(Start-Sleep -Seconds 8; try { $r = Invoke-WebRequest -Uri \"http://localhost:5000/api/health\" -UseBasicParsing -TimeoutSec 5; Write-Host \"Backend UP: $\\($r.StatusCode\\)`n$\\($r.Content\\)\" } catch { Write-Host \"Backend not up yet: $\\($_.Exception.Message\\)\" })",
+      "PowerShell(Start-Sleep -Seconds 10; try { $r = Invoke-WebRequest -Uri \"http://localhost:5000/api/health\" -UseBasicParsing -TimeoutSec 5; Write-Host \"Backend UP: $\\($r.StatusCode\\)`n$\\($r.Content\\)\" } catch { Write-Host \"Still not up: $\\($_.Exception.Message\\)\" })",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:5000/api/health\" -UseBasicParsing -TimeoutSec 4; Write-Host \"UP: $\\($r.StatusCode\\) - $\\($r.Content\\)\" } catch { Write-Host \"DOWN: $\\($_.Exception.Message\\)\" })",
+      "PowerShell($body = '{\"name\":\"Test User\",\"email\":\"test@test.com\",\"password\":\"test123\"}'; try { $r = Invoke-WebRequest -Uri \"http://localhost:5000/api/auth/register\" -Method POST -Body $body -ContentType \"application/json\" -UseBasicParsing; Write-Host \"Status: $\\($r.StatusCode\\)`n$\\($r.Content\\)\" } catch { Write-Host \"Error: $\\($_.Exception.Response.StatusCode\\) - $\\($_.Exception.Message\\)\"; $stream = $_.Exception.Response.GetResponseStream\\(\\); $reader = New-Object System.IO.StreamReader\\($stream\\); Write-Host $reader.ReadToEnd\\(\\) })",
+      "PowerShell($body = '{\"name\":\"Test\",\"email\":\"test@test.com\",\"password\":\"test123\"}'; $response = Invoke-WebRequest -Uri \"http://localhost:5000/api/auth/register\" -Method POST -Body $body -ContentType \"application/json\" -UseBasicParsing -ErrorAction SilentlyContinue; Write-Host \"Status: $\\($response.StatusCode\\)\"; Write-Host $response.Content)",
+      "PowerShell(netstat -ano)",
+      "PowerShell(Get-Process -Id 15276 -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Id 15276 -Force)",
+      "PowerShell(Resolve-DnsName \"_mongodb._tcp.cluster0.s82vii3.mongodb.net\" -Type SRV -ErrorAction SilentlyContinue)",
+      "PowerShell(Resolve-DnsName \"cluster0.s82vii3.mongodb.net\" -ErrorAction SilentlyContinue)",
+      "PowerShell($tcp = New-Object System.Net.Sockets.TcpClient; try { $tcp.Connect\\(\"ac-iry9en9-shard-00-00.s82vii3.mongodb.net\", 27017\\); Write-Host \"Port 27017 OPEN\" } catch { Write-Host \"Port 27017 BLOCKED: $\\($_.Exception.Message\\)\" } finally { $tcp.Close\\(\\) })",
+      "PowerShell(Resolve-DnsName \"cluster0.s82vii3.mongodb.net\" -Type TXT)",
+      "PowerShell(node -e \"const dns = require\\('dns'\\); dns.resolveSrv\\('_mongodb._tcp.cluster0.s82vii3.mongodb.net', \\(e,r\\) => console.log\\(e||JSON.stringify\\(r\\)\\)\\)\")",
+      "PowerShell($body = '{\"name\":\"Test User\",\"email\":\"testuser99@test.com\",\"password\":\"test123\"}'; $r = Invoke-WebRequest -Uri \"http://localhost:5000/api/auth/register\" -Method POST -Body $body -ContentType \"application/json\" -UseBasicParsing; Write-Host \"Status: $\\($r.StatusCode\\)\"; $r.Content | ConvertFrom-Json | ConvertTo-Json)",
+      "PowerShell($body = '{\"email\":\"testuser99@test.com\",\"password\":\"test123\"}'; $r = Invoke-WebRequest -Uri \"http://localhost:5000/api/auth/login\" -Method POST -Body $body -ContentType \"application/json\" -UseBasicParsing; Write-Host \"Status: $\\($r.StatusCode\\)\"; $r.Content | ConvertFrom-Json | ConvertTo-Json)",
+      "PowerShell($pids = \\(netstat -ano | Select-String \":5000\\\\s\"\\).ToString\\(\\).Trim\\(\\).Split\\(\\)[-1]; Stop-Process -Id $pids -Force -ErrorAction SilentlyContinue; Write-Host \"Killed PID $pids\")",
+      "PowerShell($r = Invoke-WebRequest -Uri \"http://localhost:5000/api/auth/github\" -UseBasicParsing -MaximumRedirection 0 -ErrorAction SilentlyContinue; Write-Host \"Status: $\\($r.StatusCode\\) - Location: $\\($r.Headers.Location\\)\")"
+    ]
+  }
+}

@@ -1,88 +1,183 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Search, MapPin, DollarSign, Sparkles, X, Share2, Flag, 
-  ChevronRight, CheckCircle2, TrendingUp, Cpu, Briefcase, 
-  Bookmark, ExternalLink 
+import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  Search, MapPin, Sparkles, X, Share2, Flag,
+  ChevronRight, CheckCircle2, TrendingUp, Cpu, Briefcase,
+  Bookmark, ExternalLink, RefreshCw, Zap
 } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import { Progress } from '../components/ui/Progress';
 import { Button } from '../components/ui/Button';
 import { useData } from '../context/DataContext';
+import { useToast } from '../context/ToastContext';
+import { api } from '../utils/api';
 
 export default function JobDiscovery() {
-  const { jobs, savedJobs, saveJob, unsaveJob, addApplication } = useData();
+  const toast = useToast();
+  const { jobs, savedJobs, refreshJobs, saveJob, unsaveJob, addApplication } = useData();
 
   const [selectedJob, setSelectedJob] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchInputValue, setSearchInputValue] = useState('');
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState('');
+  const [searchApiResults, setSearchApiResults] = useState(null);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [remoteOnly, setRemoteOnly] = useState(false);
   const [locationFilter, setLocationFilter] = useState('All');
   const [expFilter, setExpFilter] = useState('All');
   const [salaryFilter, setSalaryFilter] = useState('All');
+  const [activeFilter, setActiveFilter] = useState(null); // 'location' | 'exp' | 'salary'
+  const [filterInput, setFilterInput] = useState('');
+  const filterRef = useRef(null);
 
-  // Filter jobs based on active filters
-  const filteredJobs = jobs.filter(job => {
-    // 1. Search Query (Title, Company, Team, Description)
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      const matchTitle = job.title?.toLowerCase().includes(q);
-      const matchCompany = job.company?.toLowerCase().includes(q);
-      const matchTeam = job.team?.toLowerCase().includes(q);
-      const matchDesc = job.description?.toLowerCase().includes(q);
-      if (!matchTitle && !matchCompany && !matchTeam && !matchDesc) return false;
+  useEffect(() => {
+    function handler(e) {
+      if (filterRef.current && !filterRef.current.contains(e.target)) setActiveFilter(null);
     }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
-    // 2. Remote Only Filter
+  const openFilter = (key, current) => {
+    setFilterInput(current === 'All' ? '' : current);
+    setActiveFilter(prev => prev === key ? null : key);
+  };
+
+  const applyFilter = (key, val) => {
+    const v = val.trim() || 'All';
+    if (key === 'location') setLocationFilter(v);
+    if (key === 'exp') setExpFilter(v);
+    if (key === 'salary') setSalaryFilter(v);
+    setActiveFilter(null);
+  };
+
+  const FILTER_CONFIG = {
+    location: { label: 'Location', current: locationFilter, placeholder: 'e.g. Bangalore, Mumbai…', chips: ['Bangalore', 'Hyderabad', 'Mumbai', 'Pune', 'Delhi', 'Chennai', 'Remote'] },
+    exp:      { label: 'Experience', current: expFilter,   placeholder: 'e.g. 3-5 Years…',          chips: ['Fresher', '0-1 Years', '1-3 Years', '3-5 Years', '5+ Years'] },
+    salary:   { label: 'Salary',    current: salaryFilter, placeholder: 'e.g. ₹12-20 LPA…',        chips: ['₹3-6 LPA', '₹6-12 LPA', '₹12-20 LPA', '₹20-30 LPA', '₹30+ LPA'] },
+  };
+
+  // Pagination state
+  const JOBS_PER_PAGE = 5;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset page to 1 when filters or search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [appliedSearchQuery, remoteOnly, locationFilter, expFilter, salaryFilter]);
+
+  // Resume-based recommendations (fetched fresh from external APIs)
+  const [resumeRecs, setResumeRecs] = useState([]);
+  const [recsSkills, setRecsSkills] = useState([]);
+  const [recsLoading, setRecsLoading] = useState(false);
+  const [recsPage, setRecsPage] = useState(1);
+  const RECS_PER_PAGE = 4;
+
+  const { recommendedJobs, profile } = useData();
+
+  const fetchRecommendations = useCallback(async () => {
+    setRecsLoading(true);
+    try {
+      const result = await api.getRecommendedJobs();
+      // Deduplicate by id, then by title+company
+      const seen = new Set();
+      const deduped = (result.jobs || []).filter(j => {
+        const key = j.id ?? `${j.title}|${j.company}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      setResumeRecs(deduped.length > 0 ? deduped : recommendedJobs);
+      setRecsSkills(result.skills || [...(profile.frontendSkills || []), ...(profile.backendSkills || []), ...(profile.toolsSkills || [])]);
+      setRecsPage(1);
+    } catch (err) {
+      console.warn('Could not fetch recommendations, using client-side fallback:', err);
+      setResumeRecs(recommendedJobs);
+      setRecsSkills([...(profile.frontendSkills || []), ...(profile.backendSkills || []), ...(profile.toolsSkills || [])]);
+      setRecsPage(1);
+    } finally {
+      setRecsLoading(false);
+    }
+  }, [recommendedJobs, profile]);
+
+  useEffect(() => {
+    fetchRecommendations();
+  }, [fetchRecommendations]);
+
+  // Re-aggregate at most once per hour to backfill URLs and refresh INR salaries
+  useEffect(() => {
+    const HOUR = 3_600_000;
+    const last = parseInt(localStorage.getItem('cp_lastAgg') || '0');
+    if (Date.now() - last > HOUR) {
+      localStorage.setItem('cp_lastAgg', Date.now().toString());
+      api.aggregateJobs()
+        .then(() => refreshJobs())
+        .catch(console.warn);
+    }
+  }, [refreshJobs]);
+
+  const isFiltered = !!(appliedSearchQuery || remoteOnly || locationFilter !== 'All' || expFilter !== 'All' || salaryFilter !== 'All');
+
+  const applyNonSearchFilters = (job) => {
     if (remoteOnly) {
       const isRemote = job.workType?.toLowerCase() === 'remote' || job.location?.toLowerCase().includes('remote');
       if (!isRemote) return false;
     }
-
-    // 3. Location Filter
     if (locationFilter && locationFilter !== 'All') {
-      if (!job.location?.toLowerCase().includes(locationFilter.toLowerCase())) {
-        return false;
-      }
+      const loc = locationFilter.toLowerCase();
+      const matchLoc      = job.location?.toLowerCase().includes(loc);
+      const matchWorkType = loc === 'remote' && job.workType?.toLowerCase() === 'remote';
+      if (!matchLoc && !matchWorkType) return false;
     }
-
-    // 4. Experience Filter
     if (expFilter && expFilter !== 'All') {
-      if (!job.experience?.toLowerCase().includes(expFilter.toLowerCase())) {
-        return false;
-      }
+      if (!job.experience?.toLowerCase().includes(expFilter.toLowerCase())) return false;
     }
-
-    // 5. Salary Filter
     if (salaryFilter && salaryFilter !== 'All') {
-      if (!job.salary?.toLowerCase().includes(salaryFilter.toLowerCase())) {
-        return false;
-      }
+      if (!job.salary?.toLowerCase().includes(salaryFilter.toLowerCase())) return false;
     }
-
     return true;
-  });
+  };
 
-  // Split filtered jobs into top matches and premium listings
-  const topMatches = filteredJobs.filter(j => j.match >= 85);
-  const premiumListings = filteredJobs.filter(j => j.isPremium);
-  // Fallbacks to display all results if filters result in narrow categories
-  const displayedTopMatches = topMatches.length > 0 ? topMatches : filteredJobs.filter(j => !j.isPremium).slice(0, 2);
-  const displayedPremiumListings = premiumListings.length > 0 ? premiumListings : filteredJobs;
+  // When a search query is active, prefer API results; otherwise filter the local jobs cache
+  const filteredJobs = isFiltered ? (() => {
+    if (appliedSearchQuery && searchApiResults !== null) {
+      return searchApiResults.filter(applyNonSearchFilters);
+    }
+    return jobs.filter(job => {
+      if (appliedSearchQuery) {
+        const q = appliedSearchQuery.toLowerCase();
+        const matchTitle   = job.title?.toLowerCase().includes(q);
+        const matchCompany = job.company?.toLowerCase().includes(q);
+        const matchTeam    = job.team?.toLowerCase().includes(q);
+        const matchDesc    = job.description?.toLowerCase().includes(q);
+        if (!matchTitle && !matchCompany && !matchTeam && !matchDesc) return false;
+      }
+      return applyNonSearchFilters(job);
+    });
+  })() : [];
 
-  // Set selected job by default on page load or when jobs list changes
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredJobs.length / JOBS_PER_PAGE);
+  const paginatedJobs = filteredJobs.slice(
+    (currentPage - 1) * JOBS_PER_PAGE,
+    currentPage * JOBS_PER_PAGE
+  );
+
+  // Set selected job on load; when filters change keep current if still visible
   useEffect(() => {
     if (filteredJobs.length > 0) {
-      // Keep selected job if it is still in filtered results
       const stillAvailable = filteredJobs.find(j => j.id === selectedJob?.id);
-      if (!stillAvailable) {
-        const premium = filteredJobs.find(j => j.isPremium);
-        setSelectedJob(premium || filteredJobs[0]);
+      if (!stillAvailable && !resumeRecs.find(j => j.id === selectedJob?.id)) {
+        setSelectedJob(filteredJobs[0]);
       }
-    } else {
+    } else if (!resumeRecs.find(j => j.id === selectedJob?.id)) {
       setSelectedJob(null);
     }
-  }, [jobs, searchQuery, remoteOnly, locationFilter, expFilter, salaryFilter]);
+  }, [jobs, appliedSearchQuery, remoteOnly, locationFilter, expFilter, salaryFilter]);
 
-  const activeJob = selectedJob ? filteredJobs.find(j => j.id === selectedJob.id) || selectedJob : null;
+  const activeJob = selectedJob
+    ? filteredJobs.find(j => j.id === selectedJob.id)
+      || resumeRecs.find(j => j.id === selectedJob.id)
+      || selectedJob
+    : null;
 
   const handleSaveToggle = async (job, e) => {
     if (e) e.stopPropagation();
@@ -105,45 +200,40 @@ export default function JobDiscovery() {
       });
       // Unsave the job once moved
       await unsaveJob(job.id);
-      alert(`"${job.title}" at ${job.company} moved to Application Tracker!`);
+      toast({ type: 'success', title: 'Added to Tracker', message: `"${job.title}" at ${job.company} moved to Application Tracker.` });
     } catch (err) {
       console.error("Failed to move saved job to tracker:", err);
     }
   };
 
-  const handleApply = async (job) => {
+  const handleSearchSubmit = async (e) => {
+    if (e) e.preventDefault();
+    const query = searchInputValue.trim();
+    setAppliedSearchQuery(query);
+
+    if (!query) {
+      setSearchApiResults(null);
+      return;
+    }
+
+    setSearchLoading(true);
     try {
-      await addApplication({
-        company: job.company,
-        role: job.title,
-        stage: "Applied",
-        category: "Engineering",
-        notes: `Applied via Job Discovery. Match strength: ${job.match}%.`
-      });
-      alert(`Applied to ${job.title} at ${job.company}! We've automatically added this to your Application Tracker.`);
+      const results = await api.getJobs({ search: query });
+      setSearchApiResults(Array.isArray(results) ? results : []);
     } catch (err) {
-      console.error("Failed to automatically track job:", err);
+      console.warn('Search API failed, falling back to local filter:', err);
+      setSearchApiResults(null);
+    } finally {
+      setSearchLoading(false);
     }
   };
 
-  // Helper trigger filter prompts
-  const handleLocationClick = () => {
-    const loc = prompt("Enter location to filter (e.g. Mountain View, Redmond) or leave empty for All:", locationFilter === "All" ? "" : locationFilter);
-    if (loc === null) return;
-    setLocationFilter(loc.trim() || "All");
+  const handleApply = (job) => {
+    if (job.url) {
+      window.open(job.url, '_blank', 'noopener,noreferrer');
+    }
   };
 
-  const handleExpClick = () => {
-    const exp = prompt("Enter experience level to filter (e.g. 5+ Years Exp, 3-5 Years) or leave empty for All:", expFilter === "All" ? "" : expFilter);
-    if (exp === null) return;
-    setExpFilter(exp.trim() || "All");
-  };
-
-  const handleSalaryClick = () => {
-    const sal = prompt("Enter salary to filter (e.g. $160k, $180k) or leave empty for All:", salaryFilter === "All" ? "" : salaryFilter);
-    if (sal === null) return;
-    setSalaryFilter(sal.trim() || "All");
-  };
 
   return (
     <div className="space-y-6">
@@ -162,272 +252,416 @@ export default function JobDiscovery() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         
         {/* Left Side: Filter, Search, Stats, Lists */}
-        <div className={`space-y-6 transition-all duration-300 ${activeJob ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
+        <div className={`space-y-6 transition-all duration-300 sticky top-[84px] h-[calc(100vh-120px)] overflow-y-auto pr-1 ${activeJob ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
           
           {/* Search bar & Filter Badges Card */}
           <div className="bg-[#0f1115] border border-[#1e222b] rounded-xl p-5 shadow-lg space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-              <input 
-                type="text" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search Full Stack Developer, Software Engineer..." 
-                className="w-full bg-[#161920] border border-[#232936] rounded-lg pl-10 pr-4 py-2.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-700 transition"
-              />
-            </div>
+            <form onSubmit={handleSearchSubmit} className="flex gap-2">
+              <div className="relative flex-grow">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <input
+                  type="text"
+                  value={searchInputValue}
+                  onChange={(e) => {
+                    setSearchInputValue(e.target.value);
+                    if (!e.target.value.trim()) { setAppliedSearchQuery(''); setSearchApiResults(null); }
+                  }}
+                  placeholder="Search Full Stack Developer, Software Engineer..."
+                  className="w-full bg-[#161920] border border-[#232936] rounded-lg pl-10 pr-4 py-2.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-700 transition"
+                />
+              </div>
+              <Button type="submit" variant="brand" className="px-5 py-2.5 text-xs h-auto shrink-0 flex items-center gap-1.5" disabled={searchLoading}>
+                {searchLoading ? <RefreshCw className="w-3 h-3 animate-spin" /> : null}
+                {searchLoading ? 'Searching…' : 'Search'}
+              </Button>
+            </form>
             
-            {/* Filter Tags Row */}
-            <div className="flex flex-wrap gap-2 items-center">
-              <div 
-                onClick={handleLocationClick}
-                className={`border text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1.5 transition cursor-pointer ${
-                  locationFilter !== 'All'
-                    ? 'bg-[#1b1f29] border-indigo-500/30 text-zinc-200' 
-                    : 'bg-[#161920] border-[#232936] text-zinc-400 hover:text-zinc-200 hover:bg-[#1f2430]'
-                }`}
-              >
-                <span>Location: {locationFilter}</span>
-                {locationFilter !== 'All' && (
-                  <X 
-                    className="w-3 h-3 text-zinc-500 hover:text-white" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setLocationFilter('All');
-                    }}
-                  />
-                )}
+            {/* Filter Tags Row + Inline Popover */}
+            <div ref={filterRef} className="space-y-2">
+              <div className="flex flex-wrap gap-2 items-center">
+                {/* Remote toggle */}
+                <button
+                  onClick={() => setRemoteOnly(!remoteOnly)}
+                  className={`text-[10px] px-2.5 py-1 rounded-full transition border ${
+                    remoteOnly
+                      ? 'bg-indigo-50 border-indigo-300 text-indigo-700 dark:bg-[#1b1f29] dark:border-indigo-500/30 dark:text-zinc-200'
+                      : 'bg-white border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:bg-[#161920] dark:border-[#232936] dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-[#1f2430]'
+                  }`}
+                >
+                  Remote Only
+                </button>
+
+                {/* Location / Exp / Salary pills */}
+                {(['location', 'exp', 'salary']).map(key => {
+                  const cfg = FILTER_CONFIG[key];
+                  const isActive = cfg.current !== 'All';
+                  const isOpen = activeFilter === key;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => openFilter(key, cfg.current)}
+                      className={`border text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1.5 transition ${
+                        isOpen
+                          ? 'bg-indigo-50 border-indigo-400 text-indigo-600 dark:bg-indigo-500/15 dark:border-indigo-500/50 dark:text-indigo-300'
+                          : isActive
+                          ? 'bg-indigo-50 border-indigo-300 text-indigo-700 dark:bg-[#1b1f29] dark:border-indigo-500/30 dark:text-zinc-200'
+                          : 'bg-white border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:bg-[#161920] dark:border-[#232936] dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-[#1f2430]'
+                      }`}
+                    >
+                      <span>{cfg.label}: {cfg.current}</span>
+                      {isActive && (
+                        <X
+                          className="w-3 h-3 text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-white"
+                          onClick={e => { e.stopPropagation(); applyFilter(key, ''); }}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
-              <div 
-                onClick={() => setRemoteOnly(!remoteOnly)}
-                className={`text-[10px] px-2.5 py-1 rounded-full transition cursor-pointer border ${
-                  remoteOnly 
-                    ? 'bg-[#1b1f29] border-indigo-500/30 text-zinc-200' 
-                    : 'bg-[#161920] border-[#232936] text-zinc-400 hover:text-zinc-200 hover:bg-[#1f2430]'
-                }`}
-              >
-                Remote Only
-              </div>
-              <div 
-                onClick={handleExpClick}
-                className={`border text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1.5 transition cursor-pointer ${
-                  expFilter !== 'All'
-                    ? 'bg-[#1b1f29] border-indigo-500/30 text-zinc-200' 
-                    : 'bg-[#161920] border-[#232936] text-zinc-400 hover:text-zinc-200 hover:bg-[#1f2430]'
-                }`}
-              >
-                <span>Experience: {expFilter}</span>
-                {expFilter !== 'All' && (
-                  <X 
-                    className="w-3 h-3 text-zinc-500 hover:text-white" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setExpFilter('All');
-                    }}
-                  />
-                )}
-              </div>
-              <div 
-                onClick={handleSalaryClick}
-                className={`border text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1.5 transition cursor-pointer ${
-                  salaryFilter !== 'All'
-                    ? 'bg-[#1b1f29] border-indigo-500/30 text-zinc-200' 
-                    : 'bg-[#161920] border-[#232936] text-zinc-400 hover:text-zinc-200 hover:bg-[#1f2430]'
-                }`}
-              >
-                <span>Salary: {salaryFilter}</span>
-                {salaryFilter !== 'All' && (
-                  <X 
-                    className="w-3 h-3 text-zinc-500 hover:text-white" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSalaryFilter('All');
-                    }}
-                  />
-                )}
-              </div>
+
+              {/* Inline filter popover */}
+              {activeFilter && (() => {
+                const cfg = FILTER_CONFIG[activeFilter];
+                return (
+                  <div className="
+                    bg-white border border-slate-200 shadow-lg
+                    dark:bg-[#111318] dark:border-[#1e2235] dark:shadow-none
+                    rounded-xl p-3 space-y-2 animate-slide-down
+                  ">
+                    <input
+                      autoFocus
+                      value={filterInput}
+                      onChange={e => setFilterInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') applyFilter(activeFilter, filterInput); if (e.key === 'Escape') setActiveFilter(null); }}
+                      placeholder={cfg.placeholder}
+                      className="
+                        w-full rounded-lg px-3 py-1.5 text-[11px] outline-none transition
+                        bg-slate-50 border border-slate-200 text-slate-700 placeholder-slate-400 focus:border-indigo-400
+                        dark:bg-[#0d0f1a] dark:border-[#1e2235] dark:text-zinc-200 dark:placeholder-zinc-600 dark:focus:border-indigo-500/50
+                      "
+                    />
+                    <div className="flex flex-wrap gap-1.5">
+                      {cfg.chips.map(c => (
+                        <button
+                          key={c}
+                          onClick={() => applyFilter(activeFilter, c)}
+                          className="
+                            text-[10px] px-2.5 py-1 rounded-full border transition
+                            bg-slate-100 border-slate-200 text-slate-500 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50
+                            dark:bg-[#1b1f29] dark:border-[#232936] dark:text-zinc-400 dark:hover:border-indigo-500/40 dark:hover:text-indigo-300
+                          "
+                        >
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
-          {/* Stats Summary Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-[#0f1115] border border-[#1e222b] rounded-xl p-4 flex items-center gap-4">
-              <div className="p-3 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
-                <TrendingUp className="w-5 h-5 text-indigo-400" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Total Available</p>
-                <div className="flex items-baseline gap-1.5 mt-0.5">
-                  <span className="text-xl font-bold text-white">{filteredJobs.length}</span>
-                  <span className="text-xs text-zinc-400">Jobs Found</span>
-                </div>
-                <p className="text-[10px] text-zinc-500 mt-1">
-                  <span className="text-emerald-400 font-medium">+12% vs. last week</span> • Live matching enabled
-                </p>
-              </div>
+          {/* Stats bar */}
+          <div className="flex items-center gap-3 px-1">
+            <div className="flex items-center gap-2 bg-[#0f1115] border border-[#1e222b] rounded-lg px-3 py-2">
+              <TrendingUp className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+              <span className="text-xs font-bold text-white">{isFiltered ? filteredJobs.length : jobs.length}</span>
+              <span className="text-[10px] text-zinc-500">{isFiltered ? 'results' : 'jobs available'}</span>
             </div>
-
-            <div className="bg-[#0f1115] border border-[#1e222b] rounded-xl p-4 flex items-center gap-4">
-              <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                <Cpu className="w-5 h-5 text-purple-400" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">AI Match Profile</p>
-                <div className="flex items-baseline gap-1.5 mt-0.5">
-                  <span className="text-xl font-bold text-white">Complete</span>
-                  <Badge variant="success">Active</Badge>
-                </div>
-                <p className="text-[10px] text-zinc-500 mt-1">
-                  Dynamic calculations relative to active resume skills
-                </p>
-              </div>
+            <div className="flex items-center gap-2 bg-[#0f1115] border border-[#1e222b] rounded-lg px-3 py-2">
+              <Cpu className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+              <span className="text-[10px] text-zinc-400">AI match active</span>
+              <Badge variant="success">Live</Badge>
             </div>
           </div>
 
-          {/* Top AI Matches Section */}
+          {/* ── Search / Filter Results ─────────────────────────────── */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 px-1">
-              <Sparkles className="w-4 h-4 text-indigo-400" />
-              <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Top AI Matches</h3>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {displayedTopMatches.length === 0 ? (
-                <p className="text-xs text-zinc-500 italic col-span-2 pl-1">No matches found matching active filters.</p>
-              ) : (
-                displayedTopMatches.map((job) => {
-                  const isSelected = activeJob?.id === job.id;
-                  return (
-                    <div 
-                      key={job.id} 
-                      onClick={() => setSelectedJob(job)}
-                      className={`bg-[#0f1115] border rounded-xl p-4 flex items-center justify-between transition duration-200 cursor-pointer ${
-                        isSelected 
-                          ? 'border-indigo-500 shadow-md ring-1 ring-indigo-500/30' 
-                          : 'border-[#1e222b] hover:border-zinc-700'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${
-                          job.logoBg || 'bg-blue-600 text-white'
-                        }`}>
-                          {job.logo || (job.company ? job.company.substring(0, 1) : 'J')}
-                        </div>
-                        <div>
-                          <h4 className="text-xs font-semibold text-zinc-100">{job.title}</h4>
-                          <p className="text-[10px] text-zinc-400">{job.company} • <span className="text-zinc-500">{job.location}</span></p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-                          {job.match}% Match
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })
+              <Search className="w-4 h-4 text-indigo-400" />
+              <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                {appliedSearchQuery ? 'Search Results' : 'Search Jobs'}
+              </h3>
+              {isFiltered && appliedSearchQuery && (
+                <span className="text-[10px] text-zinc-600 italic">for "{appliedSearchQuery}"</span>
               )}
             </div>
-          </div>
 
-          {/* Premium Listings Section */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider pl-1">Premium Listings</h3>
-            
-            <div className="space-y-3">
-              {displayedPremiumListings.length === 0 ? (
-                <p className="text-xs text-zinc-500 italic pl-1">No listings found matching active filters.</p>
-              ) : (
-                displayedPremiumListings.map((job) => {
+            {filteredJobs.length === 0 ? (
+              <div className="bg-[#0f1115] border border-[#1e222b] rounded-xl p-5 text-center">
+                {!appliedSearchQuery ? (
+                  <>
+                    <p className="text-xs text-zinc-400">Search for jobs to get started.</p>
+                    <p className="text-[10px] text-zinc-600 mt-1">Enter a query above to see matching listings.</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs text-zinc-400">No jobs match your search.</p>
+                    <p className="text-[10px] text-zinc-600 mt-1">Try different keywords or clear the filters.</p>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {paginatedJobs.map((job) => {
                   const isSelected = activeJob?.id === job.id;
                   return (
-                    <div 
-                      key={job.id} 
+                    <div
+                      key={job.id}
                       onClick={() => setSelectedJob(job)}
-                      className={`bg-[#0f1115] border p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 transition duration-200 cursor-pointer ${
-                        isSelected 
-                          ? 'border-indigo-500 shadow-md ring-1 ring-indigo-500/30' 
+                      className={`bg-[#0f1115] border p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition duration-200 cursor-pointer ${
+                        isSelected
+                          ? 'border-indigo-500 shadow-md ring-1 ring-indigo-500/30'
                           : 'border-[#1e222b] hover:border-zinc-700'
                       }`}
                     >
-                      <div className="flex items-start gap-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0 ${
-                          job.logoBg || 'bg-blue-600 text-white'
-                        }`}>
-                          {job.logo || (job.company ? job.company.substring(0, 1) : 'J')}
+                      <div className="flex items-start gap-3">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 ${job.logoBg || 'bg-blue-600 text-white'}`}>
+                          {job.logo || job.company?.substring(0, 1) || 'J'}
                         </div>
-                        
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-semibold text-zinc-100">{job.title}</h4>
-                            <span className="text-[9px] text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700">
-                              {job.posted || 'Just now'}
+                        <div className="space-y-0.5 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="text-xs font-semibold text-zinc-100">{job.title}</h4>
+                            <span className="text-[9px] text-zinc-500 bg-zinc-800/80 px-1.5 py-0.5 rounded border border-zinc-700/60 shrink-0">
+                              {job.posted || 'Recently'}
                             </span>
                           </div>
-                          <p className="text-xs text-zinc-400">{job.company} • <span className="text-zinc-500">{job.team || 'Engineering Team'}</span></p>
-                          
-                          {/* Meta Tags Row */}
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 text-[11px] text-zinc-500">
+                          <p className="text-[10px] text-zinc-400">
+                            {job.company}
+                            {job.team ? <span className="text-zinc-600"> • {job.team}</span> : null}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pt-0.5 text-[10px] text-zinc-500">
                             <span className="flex items-center gap-1">
-                              <MapPin className="w-3 h-3 text-zinc-600" />
+                              <MapPin className="w-2.5 h-2.5 text-zinc-600" />
                               {job.location}
                             </span>
-                            <span>•</span>
+                            <span className="text-zinc-700">•</span>
                             <span>{job.experience}</span>
-                            <span>•</span>
+                            <span className="text-zinc-700">•</span>
                             <span className="text-zinc-300 font-medium">{job.salary}</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between md:justify-end gap-4 border-t border-zinc-900 md:border-t-0 pt-3 md:pt-0">
-                        <div className="flex flex-col items-center justify-center border border-indigo-500/20 bg-indigo-500/5 px-2.5 py-1.5 rounded-lg text-center min-w-[55px]">
-                          <span className="text-xs font-bold text-indigo-400">{job.match}%</span>
-                          <span className="text-[8px] text-zinc-500 font-bold uppercase tracking-wide">Match</span>
+                      <div className="flex items-center justify-between sm:justify-end gap-3 sm:shrink-0 border-t border-zinc-800/50 sm:border-0 pt-2.5 sm:pt-0">
+                        <div className="flex flex-col items-center border border-indigo-500/20 bg-indigo-500/5 px-2 py-1 rounded-lg min-w-[48px] text-center">
+                          <span className="text-[11px] font-bold text-indigo-400">{job.match}%</span>
+                          <span className="text-[8px] text-zinc-600 uppercase font-semibold tracking-wide">Match</span>
                         </div>
-                        
-                        <Button 
-                          variant={isSelected ? "brand" : "secondary"} 
-                          className="h-8 text-[11px] font-semibold py-0 px-3"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleApply(job);
-                          }}
+                        <Button
+                          variant={isSelected ? 'brand' : 'secondary'}
+                          className="h-7 text-[10px] font-semibold py-0 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
+                          disabled={!job.url}
+                          onClick={(e) => { e.stopPropagation(); handleApply(job); }}
                         >
-                          Apply Now
+                          Apply
                         </Button>
                       </div>
                     </div>
                   );
-                })
-              )}
-            </div>
+                })}
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 pt-4 border-t border-zinc-800/40">
+                    <Button
+                      variant="secondary"
+                      className="h-8 px-3 text-xs flex items-center gap-1 hover:text-white"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    >
+                      &larr; Prev
+                    </Button>
+
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                        const isActive = pageNum === currentPage;
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`w-8 h-8 rounded-lg text-xs font-semibold flex items-center justify-center transition-all ${
+                              isActive
+                                ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/60 text-indigo-400 font-bold shadow-md shadow-indigo-500/10'
+                                : 'bg-[#161920] border border-[#232936] text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <Button
+                      variant="secondary"
+                      className="h-8 px-3 text-xs flex items-center gap-1 hover:text-white"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    >
+                      Next &rarr;
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Saved Roles Section */}
+          {/* ── Recommended for You (resume-based, from external APIs) ── */}
           <div className="space-y-3 pt-2">
-            <div className="flex items-center gap-2 px-1">
-              <Bookmark className="w-4 h-4 text-zinc-400" />
-              <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Saved Roles</h3>
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-amber-400" />
+                <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Recommended for You</h3>
+                {recsLoading && <span className="text-[10px] text-zinc-500 italic">Fetching…</span>}
+              </div>
+              <button
+                onClick={fetchRecommendations}
+                disabled={recsLoading}
+                className="flex items-center gap-1 text-[10px] text-zinc-500 hover:text-zinc-300 transition disabled:opacity-40"
+              >
+                <RefreshCw className={`w-3 h-3 ${recsLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {savedJobs.length === 0 ? (
-                <p className="text-xs text-zinc-500 italic col-span-2 pl-1">No saved jobs yet. Bookmarked jobs will appear here.</p>
-              ) : (
-                savedJobs.map((role) => (
+
+            {recsSkills.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 px-1">
+                <span className="text-[9px] text-zinc-600 uppercase tracking-wider self-center">Matched on:</span>
+                {recsSkills.slice(0, 8).map((sk, i) => (
+                  <span key={i} className="text-[9px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                    {sk}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {recsLoading ? (
+              <div className="space-y-2.5">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="bg-[#0f1115] border border-[#1e222b] rounded-xl p-4 animate-pulse h-16" />
+                ))}
+              </div>
+            ) : resumeRecs.length === 0 ? (
+              <div className="bg-[#0f1115] border border-[#1e222b] rounded-xl p-5 text-center">
+                <p className="text-xs text-zinc-400">No recommendations yet.</p>
+                <p className="text-[10px] text-zinc-600 mt-1">Add skills to your profile or run a resume analysis to get personalised matches.</p>
+              </div>
+            ) : (() => {
+              const totalPages = Math.ceil(resumeRecs.length / RECS_PER_PAGE);
+              const pageJobs = resumeRecs.slice((recsPage - 1) * RECS_PER_PAGE, recsPage * RECS_PER_PAGE);
+              return (
+                <div className="space-y-2.5">
+                  {pageJobs.map((job) => {
+                    const isSelected = activeJob?.id === job.id;
+                    return (
+                      <div
+                        key={job.id}
+                        onClick={() => setSelectedJob(job)}
+                        className={`bg-[#0f1115] border p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition duration-200 cursor-pointer ${
+                          isSelected
+                            ? 'border-amber-500/60 shadow-md ring-1 ring-amber-500/20'
+                            : 'border-[#1e222b] hover:border-zinc-700'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 ${job.logoBg || 'bg-zinc-700 text-white'}`}>
+                            {job.logo || job.company?.substring(0, 1) || 'J'}
+                          </div>
+                          <div className="space-y-0.5 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="text-xs font-semibold text-zinc-100">{job.title}</h4>
+                              <span className="text-[9px] text-zinc-500 bg-zinc-800/80 px-1.5 py-0.5 rounded border border-zinc-700/60 shrink-0">
+                                {job.posted || 'Recently'}
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-zinc-400">{job.company}</p>
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pt-0.5 text-[10px] text-zinc-500">
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-2.5 h-2.5 text-zinc-600" />
+                                {job.location}
+                              </span>
+                              <span className="text-zinc-700">•</span>
+                              <span className="text-zinc-300 font-medium">{job.salary}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between sm:justify-end gap-3 sm:shrink-0 border-t border-zinc-800/50 sm:border-0 pt-2.5 sm:pt-0">
+                          <div className="flex flex-col items-center border border-amber-500/20 bg-amber-500/5 px-2 py-1 rounded-lg min-w-[48px] text-center">
+                            <span className="text-[11px] font-bold text-amber-400">{job.match}%</span>
+                            <span className="text-[8px] text-zinc-600 uppercase font-semibold tracking-wide">Match</span>
+                          </div>
+                          <Button
+                            variant="secondary"
+                            className="h-7 text-[10px] font-semibold py-0 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
+                            disabled={!job.url}
+                            onClick={(e) => { e.stopPropagation(); handleApply(job); }}
+                          >
+                            Apply
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-1.5 pt-1">
+                      <button
+                        onClick={() => setRecsPage(p => Math.max(1, p - 1))}
+                        disabled={recsPage === 1}
+                        className="w-7 h-7 rounded-lg text-[10px] font-bold border border-[#232936] bg-[#161920] text-zinc-400 hover:text-zinc-200 hover:bg-[#1f2430] disabled:opacity-30 disabled:cursor-not-allowed transition"
+                      >
+                        ‹
+                      </button>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                        <button
+                          key={p}
+                          onClick={() => setRecsPage(p)}
+                          className={`w-7 h-7 rounded-lg text-[10px] font-bold border transition ${
+                            p === recsPage
+                              ? 'bg-amber-500/15 border-amber-500/40 text-amber-400'
+                              : 'border-[#232936] bg-[#161920] text-zinc-500 hover:text-zinc-200 hover:bg-[#1f2430]'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => setRecsPage(p => Math.min(totalPages, p + 1))}
+                        disabled={recsPage === totalPages}
+                        className="w-7 h-7 rounded-lg text-[10px] font-bold border border-[#232936] bg-[#161920] text-zinc-400 hover:text-zinc-200 hover:bg-[#1f2430] disabled:opacity-30 disabled:cursor-not-allowed transition"
+                      >
+                        ›
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* ── Saved Roles ──────────────────────────────────────────── */}
+          {savedJobs.length > 0 && (
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center gap-2 px-1">
+                <Bookmark className="w-4 h-4 text-zinc-400" />
+                <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Saved Roles</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {savedJobs.map((role) => (
                   <div key={role.id} className="bg-[#0f1115] border border-[#1e222b] rounded-xl p-3.5 flex items-center justify-between hover:border-zinc-700 transition">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${role.logoBg || 'bg-indigo-600 text-white'}`}>
-                        {role.logo || (role.company ? role.company.substring(0, 1) : 'J')}
+                        {role.logo || role.company?.substring(0, 1) || 'J'}
                       </div>
                       <div>
                         <h4 className="text-xs font-semibold text-zinc-100">{role.title}</h4>
                         <p className="text-[10px] text-zinc-400">{role.company}</p>
                       </div>
                     </div>
-                    
-                    <button 
+                    <button
                       onClick={(e) => handleMoveToTracker(role, e)}
                       className="text-[10px] font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition"
                     >
@@ -435,10 +669,10 @@ export default function JobDiscovery() {
                       <ChevronRight className="w-3 h-3" />
                     </button>
                   </div>
-                ))
-              )}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
 
@@ -600,13 +834,21 @@ export default function JobDiscovery() {
 
             {/* Bottom Apply CTA Button */}
             <div className="pt-2">
-              <button 
-                onClick={() => handleApply(activeJob)}
-                className="w-full bg-[#5865f2] hover:bg-[#4752c4] active:bg-[#3c45a3] text-white py-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition duration-200 shadow-md"
-              >
-                <span>Apply to this Position</span>
-                <ExternalLink className="w-4 h-4" />
-              </button>
+              {activeJob.url ? (
+                <a
+                  href={activeJob.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-[#5865f2] hover:bg-[#4752c4] active:bg-[#3c45a3] text-white py-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition duration-200 shadow-md"
+                >
+                  <span>Apply to this Position</span>
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              ) : (
+                <button disabled className="w-full bg-zinc-800 text-zinc-500 py-3 rounded-lg text-xs font-semibold cursor-not-allowed">
+                  Link loading — check back shortly
+                </button>
+              )}
             </div>
 
           </div>

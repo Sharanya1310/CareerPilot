@@ -1,4 +1,5 @@
 import JobService from "../services/jobService.js";
+import JobAggregationService from "../services/jobAggregationService.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import AppError from "../utils/AppError.js";
 
@@ -8,10 +9,8 @@ export const getJobs = asyncHandler(async (req, res) => {
 });
 
 export const getRecommendations = asyncHandler(async (req, res) => {
-  const jobs = await JobService.getAllJobs(req.user._id);
-  // Filter for jobs with a match score >= 85 or top recommendations
-  const recommendations = jobs.filter(j => j.match >= 85);
-  return res.json(recommendations);
+  const result = await JobService.getRecommendedForUser(req.user._id);
+  return res.json(result);
 });
 
 export const getSavedJobs = asyncHandler(async (req, res) => {
@@ -35,4 +34,24 @@ export const unsaveJob = asyncHandler(async (req, res) => {
   }
   await JobService.unsaveJob(req.user._id, jobId);
   return res.json({ success: true, message: "Job unsaved successfully" });
+});
+
+export const triggerJobAggregation = asyncHandler(async (req, res) => {
+  const count = await JobAggregationService.aggregateAllSources();
+  return res.status(200).json({
+    success: true,
+    message: `Job aggregation completed. Added ${count} new jobs.`,
+    count,
+  });
+});
+
+export const clearAndReaggregate = asyncHandler(async (req, res) => {
+  const Job = (await import("../models/Job.js")).default;
+  await Job.deleteMany({ source: { $ne: "Local" } });
+  const count = await JobAggregationService.aggregateAllSources();
+  return res.status(200).json({
+    success: true,
+    message: `Cleared stale jobs and re-fetched ${count} fresh jobs.`,
+    count,
+  });
 });

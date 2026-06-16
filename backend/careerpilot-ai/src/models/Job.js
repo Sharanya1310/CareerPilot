@@ -95,9 +95,25 @@ const jobSchema = new mongoose.Schema(
         default: ["Health insurance", "401k", "Remote work friendly"],
       },
     },
+    url: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     isPremium: {
       type: Boolean,
       default: false,
+    },
+    source: {
+      type: String,
+      default: "Local",
+      trim: true,
+    },
+    externalId: {
+      type: String,
+      default: "",
+      trim: true,
+      index: true,
     },
   },
   {
